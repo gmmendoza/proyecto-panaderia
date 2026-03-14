@@ -1,3 +1,12 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+    UserPlus,
+    Trash2,
+    PhoneCall,
+    Banknote,
+    UsersRound
+} from 'lucide-react';
 import { api } from '../services/api';
 
 export default function ClientesList() {

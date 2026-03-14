@@ -1,3 +1,12 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+    CalendarPlus,
+    Trash2,
+    CheckCircle2,
+    Timer,
+    ClipboardList
+} from 'lucide-react';
 import { api } from '../services/api';
 
 export default function TurnosList() {
