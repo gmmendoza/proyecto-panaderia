@@ -1,12 +1,4 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import {
-    UserPlus,
-    Trash2,
-    PhoneCall,
-    Banknote,
-    UsersRound
-} from 'lucide-react';
+import { api } from '../services/api';
 
 export default function ClientesList() {
     const [clientes, setClientes] = useState([]);
@@ -23,8 +15,10 @@ export default function ClientesList() {
     const fetchClientes = async () => {
         try {
             setLoading(true);
-            const res = await fetch('/api/clientes');
-            if (res.ok) setClientes(await res.json());
+            const data = await api.clientes.getAll();
+            setClientes(data);
+        } catch (err) {
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -40,27 +34,22 @@ export default function ClientesList() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('/api/clientes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            if (!res.ok) throw new Error('Error al crear cliente');
+            await api.clientes.create(formData);
             await fetchClientes();
             setIsModalOpen(false);
             setFormData({ nombre: '', apellido: '', telefono: '', saldo: 0 });
         } catch (err) {
-            alert(err.message);
+            alert('Error al crear cliente');
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('¿Confirmas la eliminación de este cliente?')) return;
         try {
-            const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
-            if (res.ok) setClientes(prev => prev.filter(c => c.id !== id));
+            await api.clientes.delete(id);
+            setClientes(prev => prev.filter(c => c.id !== id));
         } catch (err) {
-            alert(err.message);
+            alert('Error al eliminar cliente');
         }
     };
 

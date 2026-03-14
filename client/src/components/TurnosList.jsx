@@ -1,12 +1,4 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import {
-    CalendarPlus,
-    Trash2,
-    CheckCircle2,
-    Timer,
-    ClipboardList
-} from 'lucide-react';
+import { api } from '../services/api';
 
 export default function TurnosList() {
     const [turnos, setTurnos] = useState([]);
@@ -23,12 +15,14 @@ export default function TurnosList() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [turnosRes, clientesRes] = await Promise.all([
-                fetch('/api/turnos'),
-                fetch('/api/clientes')
+            const [turnosData, clientesData] = await Promise.all([
+                api.turnos.getAll(),
+                api.clientes.getAll()
             ]);
-            setTurnos(await turnosRes.json());
-            setClientes(await clientesRes.json());
+            setTurnos(turnosData);
+            setClientes(clientesData);
+        } catch (err) {
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -44,40 +38,31 @@ export default function TurnosList() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('/api/turnos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...formData, clienteId: parseInt(formData.clienteId) })
-            });
-            if (!res.ok) throw new Error('Error al crear turno');
+            await api.turnos.create({ ...formData, clienteId: parseInt(formData.clienteId) });
             await fetchData();
             setIsModalOpen(false);
             setFormData({ clienteId: '', fechaHora: '', estado: 'Pendiente' });
         } catch (err) {
-            alert(err.message);
+            alert('Error al crear turno');
         }
     };
 
     const handleStatusChange = async (id, newStatus) => {
         try {
-            await fetch(`/api/turnos/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado: newStatus })
-            });
+            await api.turnos.updateEstado(id, newStatus);
             await fetchData();
         } catch (err) {
-            alert(err.message);
+            alert('Error al actualizar estado');
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('¿Confirmas la eliminación de este turno/pedido?')) return;
         try {
-            await fetch(`/api/turnos/${id}`, { method: 'DELETE' });
+            await api.turnos.delete(id);
             setTurnos(prev => prev.filter(t => t.id !== id));
         } catch (err) {
-            alert(err.message);
+            alert('Error al eliminar turno');
         }
     };
 
