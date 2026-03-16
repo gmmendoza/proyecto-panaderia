@@ -8,51 +8,47 @@ import {
   ArrowUp,
   ArrowDown,
   Calendar,
-  Download
+  Download,
+  PieChart,
+  Target
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Estadisticas = () => {
   const stats = [
-    { label: 'Ventas Totales', value: '$245.800', change: '+12.5%', icon: DollarSign, color: '#4CAF50' },
-    { label: 'Clientes Nuevos', value: '124', change: '+18%', icon: Users, color: '#2196F3' },
-    { label: 'Pedidos Realizados', value: '42', change: '-3%', icon: ShoppingBag, color: '#FF9800' },
-    { label: 'Ticket Promedio', value: '$5.850', change: '+5%', icon: TrendingUp, color: '#7B1FA2' },
+    { label: 'Ingresos Mensuales', value: '$1.4M', change: '+15.2%', icon: DollarSign, color: '#D46A2A' },
+    { label: 'Nuevos Clientes', value: '+84', change: '+12%', icon: Users, color: '#8D6E63' },
+    { label: 'Ordenes Hoy', value: '38', change: '-4%', icon: ShoppingBag, color: '#EED7C5' },
+    { label: 'Ticket Promedio', value: '$8.500', change: '+8%', icon: TrendingUp, color: '#D46A2A' },
   ];
 
-  const topProducts = [
-    { name: 'Pan Francés', sales: 450, growth: 12 },
-    { name: 'Medialunas', sales: 380, growth: 8 },
-    { name: 'Pan de Masa Madre', sales: 210, growth: 25 },
-    { name: 'Baguette', sales: 180, growth: -5 },
+  const topCategories = [
+    { name: 'Panadería Tradicional', value: 65, color: '#D46A2A' },
+    { name: 'Pastelería Creativa', value: 25, color: '#8D6E63' },
+    { name: 'Cafetería Especialidad', value: 10, color: '#EED7C5' },
   ];
 
   return (
     <div className="fade-in">
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-            <div className="logo-icon" style={{ background: '#E8F5E9', color: '#2E7D32' }}>
-              <LineChart size={22} />
-            </div>
-            <h1 className="serif" style={{ fontSize: '2.5rem' }}>Estadísticas & Reportes</h1>
-          </div>
-          <p style={{ color: 'var(--bakery-text-muted)', fontSize: '0.95rem' }}>
-            Análisis de rendimiento y comportamiento del negocio.
-          </p>
+          <h1 className="serif" style={{ fontSize: '2.5rem', margin: 0 }}>Panel Analítico</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Métricas clave y proyecciones de rendimiento del negocio.</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="category-pill">
-            <Calendar size={16} /> Últimos 30 días
-          </button>
-          <button className="btn-bakery" style={{ background: 'white', color: 'var(--bakery-text)', border: '1px solid var(--bakery-border)' }}>
-            <Download size={16} /> EXPORTAR
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '4px', background: 'white', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+            <button className="period-btn active">MES</button>
+            <button className="period-btn">SEM</button>
+            <button className="period-btn">HOY</button>
+          </div>
+          <button className="btn btn-secondary">
+            <Download size={18} /> REPORTES
           </button>
         </div>
       </header>
 
-      {/* Stats Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+      {/* Primary Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
         {stats.map((stat, i) => (
           <motion.div 
             key={i} 
@@ -60,83 +56,131 @@ const Estadisticas = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
+            style={{ padding: '2rem', overflow: 'hidden', position: 'relative' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <div className="logo-icon" style={{ background: `${stat.color}15`, color: stat.color, width: '40px', height: '40px' }}>
-                <stat.icon size={20} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: `${stat.color}15`, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <stat.icon size={24} />
               </div>
-              <span style={{ 
-                fontSize: '0.75rem', 
-                fontWeight: 700, 
-                color: stat.change.startsWith('+') ? '#4CAF50' : '#F44336',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.2rem'
-              }}>
-                {stat.change.startsWith('+') ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                {stat.change}
-              </span>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 800,
+                  color: stat.change.includes('+') ? '#10b981' : '#ef4444',
+                  background: stat.change.includes('+') ? '#ecfdf5' : '#fef2f2',
+                  padding: '4px 10px',
+                  borderRadius: '20px'
+                }}>
+                  {stat.change.includes('+') ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                  {stat.change}
+                </div>
+              </div>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--bakery-text-muted)', fontWeight: 600 }}>{stat.label}</p>
-            <h2 className="serif" style={{ fontSize: '1.75rem', marginTop: '0.25rem' }}>{stat.value}</h2>
+            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{stat.label}</p>
+            <div className="serif" style={{ fontSize: '2.25rem' }}>{stat.value}</div>
+            
+            {/* Soft decorative background shape */}
+            <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', width: '100px', height: '100px', background: `${stat.color}05`, borderRadius: '50%' }} />
           </motion.div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-        {/* Sales Chart Placeholder */}
-        <div className="bakery-card">
-          <h3 className="serif" style={{ marginBottom: '1.5rem' }}>Ventas por Día</h3>
-          <div style={{ height: '300px', display: 'flex', alignItems: 'flex-end', gap: '1rem', padding: '1rem 0' }}>
-            {[40, 60, 45, 90, 65, 80, 95].map((h, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                <motion.div 
-                  initial={{ height: 0 }}
-                  animate={{ height: `${h}%` }}
-                  transition={{ duration: 1, delay: i * 0.1 }}
-                  style={{ 
-                    width: '100%', 
-                    background: i === 6 ? 'var(--bakery-primary)' : '#EED7C5', 
-                    borderRadius: '8px 8px 0 0',
-                    position: 'relative'
-                  }}
-                >
-                  <div style={{ position: 'absolute', top: '-25px', width: '100%', textAlign: 'center', fontSize: '0.7rem', fontWeight: 700 }}>
-                    {h}k
-                  </div>
-                </motion.div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--bakery-text-muted)' }}>
-                  {['L', 'M', 'M', 'J', 'V', 'S', 'D'][i]}
-                </span>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+        {/* Sales Activity */}
+        <div className="bakery-card" style={{ padding: '2.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
+            <h3 className="serif" style={{ fontSize: '1.5rem' }}>Flujo de Ventas</h3>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '10px', height: '100%', background: 'var(--primary)', borderRadius: '2px' }} /> ACTUAL
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
+                <div style={{ width: '10px', height: '10px', background: '#E5E7EB', borderRadius: '2px' }} /> PROMEDIO
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ height: '280px', display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
+            {[35, 55, 42, 85, 68, 92, 75, 58, 82, 60, 45, 78].map((val, i) => (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', height: '100%' }}>
+                <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${val}%` }}
+                    transition={{ duration: 1, delay: i * 0.05 }}
+                    style={{ 
+                      width: '100%', 
+                      background: i % 2 === 0 ? 'var(--primary)' : 'var(--primary-light)', 
+                      borderRadius: '6px 6px 0 0',
+                      boxShadow: '0 4px 12px rgba(212, 106, 42, 0.1)'
+                    }} 
+                  >
+                    <div style={{ position: 'absolute', top: '-25px', width: '100%', textAlign: 'center', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-main)' }}>{val}</div>
+                  </motion.div>
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                  {['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Top Products */}
-        <div className="bakery-card">
-          <h3 className="serif" style={{ marginBottom: '1.5rem' }}>Más Vendidos</h3>
-          {topProducts.map((p, i) => (
-            <div key={i} style={{ marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                <span style={{ fontWeight: 600 }}>{p.name}</span>
-                <span style={{ color: 'var(--bakery-text-muted)' }}>{p.sales} vtas</span>
+        {/* Category Breakdown */}
+        <div className="bakery-card" style={{ padding: '2.5rem' }}>
+          <h3 className="serif" style={{ fontSize: '1.5rem', marginBottom: '2rem' }}>Distribución</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {topCategories.map((cat, i) => (
+              <div key={i}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{cat.name}</span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: cat.color }}>{cat.value}%</span>
+                </div>
+                <div style={{ height: '8px', background: '#F3F4F6', borderRadius: '10px', overflow: 'hidden' }}>
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cat.value}%` }}
+                    style={{ height: '100%', background: cat.color, borderRadius: '10px' }}
+                  />
+                </div>
               </div>
-              <div style={{ background: '#f0f0f0', height: '6px', borderRadius: '3px' }}>
-                <div style={{ 
-                  width: `${(p.sales / 500) * 100}%`, 
-                  background: 'var(--bakery-primary)', 
-                  height: '100%',
-                  borderRadius: '3px'
-                }} />
-              </div>
-              <div style={{ textAlign: 'right', fontSize: '0.7rem', color: '#4CAF50', marginTop: '0.25rem', fontWeight: 700 }}>
-                ↑ {p.growth}% crecimiento
-              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--bg-app)', borderRadius: '20px', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+              <Target size={18} color="var(--primary)" />
+              <h4 style={{ margin: 0, fontSize: '0.9rem' }}>Meta de Ventas</h4>
             </div>
-          ))}
+            <div className="serif" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>$1.8M <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontFamily: 'sans-serif' }}>/ mes</span></div>
+            <div style={{ height: '6px', background: 'white', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ width: '78%', height: '100%', background: 'var(--primary)' }} />
+            </div>
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', marginTop: '4px', fontWeight: 700, color: 'var(--primary)' }}>78% completado</div>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        .period-btn {
+          border: none;
+          background: transparent;
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 0.75rem;
+          font-weight: 800;
+          cursor: pointer;
+          color: var(--text-muted);
+          transition: all 0.2s;
+        }
+        .period-btn.active {
+          background: var(--bg-app);
+          color: var(--primary);
+        }
+      `}</style>
     </div>
   );
 };

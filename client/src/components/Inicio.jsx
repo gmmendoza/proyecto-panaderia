@@ -5,169 +5,147 @@ import {
   Clock,
   MapPin,
   Heart,
-  Quote
+  Quote,
+  Zap,
+  CalendarDays
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Inicio = ({ setActiveTab }) => {
+const Inicio = ({ setActiveTab, userRole }) => {
   const categories = [
     { title: 'Panes de Masa Madre', desc: 'Fermentación lenta y natural.', img: '/gallery2.png' },
     { title: 'Pastelería Premium', desc: 'Dulces momentos artesanales.', img: '/gallery3.png' },
     { title: 'Tradición y Aroma', desc: 'Recetas de la abuela.', img: '/gallery1.png' },
   ];
 
-  const testimonials = [
-    { name: 'Ana García', text: 'El mejor pan de la zona. El aroma al entrar es increíble.', role: 'Cliente frecuente' },
-    { name: 'Marcos López', text: 'Las facturas son de otro nivel. Se nota la calidad de los ingredientes.', role: 'Vecino de El Aromo' },
-  ];
+  const getGreeting = () => {
+    switch(userRole) {
+      case 'ventas': return 'Bienvenid@, Cajero';
+      case 'produccion': return 'Bienvenid@, Panadero';
+      case 'admin': return 'Bienvenid@, Admin';
+      default: return 'Bienvenid@';
+    }
+  };
+
+  const today = new Intl.DateTimeFormat('es-ES', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  }).format(new Date());
 
   return (
     <div className="fade-in">
-      {/* Hero Section */}
+      {/* Role-Based Greeting & Date */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
+        <div>
+          <h1 className="serif" style={{ fontSize: '3rem', margin: 0 }}>
+            {getGreeting()} <span role="img" aria-label="wave">👋</span>
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '0.5rem' }}>
+            Aquí tienes un resumen rápido de cómo marcha La Panadería hoy.
+          </p>
+        </div>
+        <div className="bakery-card" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+          <Clock size={18} color="var(--primary)" />
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', textTransform: 'capitalize' }}>{today}</span>
+        </div>
+      </div>
+
+      {/* Control Panel Banner */}
+      <section className="control-banner">
+        <div>
+          <h1>Panel de Control Central</h1>
+          <p>Gestiona ventas, inventario, clientes y turnos desde un único lugar.</p>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            {userRole !== 'produccion' && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setActiveTab('pos')}
+                style={{ background: 'white', color: 'var(--primary)', border: 'none' }}
+              >
+                <ShoppingBag size={18} /> ABRIR CAJA
+              </button>
+            )}
+            <button 
+              className="btn" 
+              onClick={() => setActiveTab('turnos')}
+              style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}
+            >
+              VER PEDIDOS
+            </button>
+          </div>
+        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ fontSize: '10rem', opacity: 0.15, position: 'absolute', right: '5%', pointerEvents: 'none' }}
+        >
+          🥖
+        </motion.div>
+      </section>
+
+      {/* Quick Stats Summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
+        <div className="bakery-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ padding: '1rem', borderRadius: '12px', background: 'var(--success-bg)', color: 'var(--success)' }}>
+            <Zap size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ventas de Hoy</p>
+            <h3 style={{ margin: 0, fontSize: '1.5rem' }}>$45.200</h3>
+          </div>
+        </div>
+        <div className="bakery-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ padding: '1rem', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)' }}>
+            <ShoppingBag size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pedidos Pendientes</p>
+            <h3 style={{ margin: 0, fontSize: '1.5rem' }}>5</h3>
+          </div>
+        </div>
+        <div className="bakery-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ padding: '1rem', borderRadius: '12px', background: '#F0F2F5', color: '#65676B' }}>
+            <CalendarDays size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Clientes Atendidos</p>
+            <h3 style={{ margin: 0, fontSize: '1.5rem' }}>12</h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section (Abridged for Dashboard) */}
       <section 
         className="hero-section" 
-        style={{ backgroundImage: 'url("/hero.png")' }}
+        style={{ backgroundImage: 'url("/hero.png")', height: '350px' }}
       >
         <div className="hero-overlay"></div>
         <div className="hero-content">
-          <motion.h1 
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Tradición que se siente en cada aroma
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Descubre el sabor auténtico del pan artesanal, horneado con pasión y los mejores ingredientes naturales.
-          </motion.p>
+          <h2 className="serif" style={{ fontSize: '2.5rem', color: 'white', marginBottom: '1rem' }}>Impulsa tu Panadería</h2>
+          <p style={{ fontSize: '1rem', marginBottom: '1.5rem' }}>Gestiona tus recetas, controla el inventario y realiza ventas rápidas con un solo sistema.</p>
+          <button className="btn btn-primary" onClick={() => setActiveTab('produccion')}>Ver Recetario</button>
+        </div>
+      </section>
+
+      {/* Gallery Highlight */}
+      <h2 className="serif" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Nuestras Especialidades</h2>
+      <div className="bakery-gallery" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+        {categories.map((cat, i) => (
           <motion.div 
-            style={{ display: 'flex', gap: '1.5rem' }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            key={i} 
+            className="gallery-item-container"
+            whileHover={{ y: -5 }}
           >
-            <button 
-              className="btn btn-primary" 
-              onClick={() => setActiveTab('pos')}
-              style={{ padding: '1rem 2rem', fontSize: '1rem' }}
-            >
-              Comprar Ahora <ShoppingBag size={18} />
-            </button>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => setActiveTab('produccion')}
-              style={{ padding: '1rem 2rem', fontSize: '1rem' }}
-            >
-              Nuestras Recetas
-            </button>
+            <div className="gallery-item" style={{ height: '180px' }}>
+              <img src={cat.img} alt={cat.title} />
+            </div>
+            <h3 className="serif" style={{ fontSize: '1.2rem', marginTop: '1rem', marginBottom: '0.5rem' }}>{cat.title}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{cat.desc}</p>
           </motion.div>
-        </div>
-      </section>
-
-      {/* About Us / Story Section */}
-      <section style={{ padding: '4rem 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-        <motion.div
-           initial={{ opacity: 0, scale: 0.9 }}
-           whileInView={{ opacity: 1, scale: 1 }}
-           viewport={{ once: true }}
-        >
-          <img 
-            src="/gallery1.png" 
-            alt="Interior Panadería" 
-            style={{ width: '100%', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)' }} 
-          />
-        </motion.div>
-        <div>
-          <h4 style={{ color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, marginBottom: '1rem' }}>Sobre Nosotros</h4>
-          <h2 className="serif" style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>Más que una panadería, somos una tradición</h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: '2rem' }}>
-            En El Aromo, creemos que el pan es el corazón de cada hogar. Por eso, utilizamos procesos milenarios de fermentación y materias primas seleccionadas para entregarte un producto que no solo alimenta, sino que reconforta.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-            <div>
-              <div style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}><Heart size={24} /></div>
-              <h4 style={{ marginBottom: '0.5rem' }}>Pura Pasión</h4>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Hecho a mano con dedicación absoluta.</p>
-            </div>
-            <div>
-              <div style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}><Star size={24} /></div>
-              <h4 style={{ marginBottom: '0.5rem' }}>Calidad Local</h4>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Ingredientes frescos de nuestra región.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery Section */}
-      <section style={{ padding: '4rem 0' }}>
-        <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 className="serif" style={{ fontSize: '2.5rem' }}>Nuestras Especialidades</h2>
-          <p style={{ color: 'var(--text-muted)' }}>Lo más destacado de nuestro horno para tu mesa.</p>
-        </div>
-        <div className="bakery-gallery">
-          {categories.map((cat, i) => (
-            <motion.div 
-              key={i} 
-              className="gallery-item-container"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <div className="gallery-item" style={{ marginBottom: '1rem' }}>
-                <img src={cat.img} alt={cat.title} />
-              </div>
-              <h3 className="serif">{cat.title}</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{cat.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section style={{ padding: '6rem 0', background: 'var(--primary-light)', margin: '0 -3rem', padding: '6rem 3rem', textAlign: 'center' }}>
-         <h2 className="serif" style={{ fontSize: '2.5rem', marginBottom: '4rem' }}>Lo que dicen nuestros clientes</h2>
-         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-            {testimonials.map((t, i) => (
-              <div key={i} className="bakery-card" style={{ textAlign: 'left', padding: '2.5rem' }}>
-                <Quote size={40} color="var(--primary)" style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem', fontStyle: 'italic' }}>"{t.text}"</p>
-                <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div className="user-avatar">{t.name[0]}</div>
-                  <div>
-                    <h5 style={{ margin: 0 }}>{t.name}</h5>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.role}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-         </div>
-      </section>
-
-      {/* Contact & Map Placeholder */}
-      <section style={{ padding: '6rem 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem' }}>
-        <div>
-          <h2 className="serif" style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Visítanos</h2>
-          <p style={{ marginBottom: '2rem', color: 'var(--text-muted)' }}>Estamos en el corazón del barrio, esperándote con pan caliente todos los días.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <div className="logo-icon" style={{ width: '44px', height: '44px' }}><MapPin size={20} /></div>
-              <span>Calle Falsa 123, El Aromo, Buenos Aires</span>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <div className="logo-icon" style={{ width: '44px', height: '44px' }}><Clock size={20} /></div>
-              <span>Lun - Sab: 07:00 - 20:00 | Dom: 08:30 - 13:00</span>
-            </div>
-          </div>
-        </div>
-        <div style={{ background: '#E8E2DE', borderRadius: 'var(--radius-lg)', height: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-          [ Google Maps Placeholder ]
-        </div>
-      </section>
+        ))}
+      </div>
     </div>
   );
 };

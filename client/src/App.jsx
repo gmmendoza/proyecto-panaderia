@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
@@ -21,20 +21,24 @@ import Inventario from './components/Inventario';
 import Recetario from './components/Recetario';
 import Estadisticas from './components/Estadisticas';
 import Inicio from './components/Inicio';
+import Login from './components/Login';
 
 function App() {
   const [activeTab, setActiveTab] = useState('inicio');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
   const navItems = [
-    { id: 'inicio', label: 'Inicio', icon: Home },
-    { id: 'pos', label: 'Punto de Venta', icon: Store },
-    { id: 'clientes', label: 'Directorio Clientes', icon: UsersRound },
-    { id: 'turnos', label: 'Agenda & Turnos', icon: Calendar },
-    { id: 'inventario', label: 'Inventario & Stock', icon: Box },
-    { id: 'produccion', label: 'Recetario & Producción', icon: BookOpen },
-    { id: 'estadisticas', label: 'Estadísticas', icon: LineChart },
+    { id: 'pos', label: 'Punto de Venta', icon: Store, roles: ['admin', 'ventas'] },
+    { id: 'pos', label: 'Punto de Venta', icon: Store, roles: ['admin', 'ventas'] },
+    { id: 'clientes', label: 'Directorio Clientes', icon: UsersRound, roles: ['admin', 'ventas'] },
+    { id: 'turnos', label: 'Agenda & Turnos', icon: Calendar, roles: ['admin', 'ventas', 'produccion'] },
+    { id: 'inventario', label: 'Inventario & Stock', icon: Box, roles: ['admin', 'produccion'] },
+    { id: 'produccion', label: 'Recetario & Producción', icon: BookOpen, roles: ['admin', 'produccion'] },
+    { id: 'estadisticas', label: 'Estadísticas', icon: LineChart, roles: ['admin'] },
   ];
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
 
   const handleNavClick = (id) => {
     setActiveTab(id);
@@ -42,25 +46,33 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getUserInfo = () => {
+    switch (userRole) {
+      case 'ventas': return { name: 'Cajero', roleName: 'Ventas y Atención', avatar: 'VN' };
+      case 'produccion': return { name: 'Maestro Panadero', roleName: 'Producción', avatar: 'PR' };
+      case 'admin': return { name: 'Guadalupe', roleName: 'Administrador Principal', avatar: 'ADM' };
+      default: return { name: 'Usuario', roleName: 'Acceso Directo', avatar: 'U' };
+    }
+  };
+
+  const userInfo = getUserInfo();
+
+  if (!userRole) {
+    return <Login setRole={(role) => {
+      setUserRole(role);
+      // Set default tab based on role
+      if (role === 'admin') setActiveTab('estadisticas');
+      else if (role === 'ventas') setActiveTab('pos');
+      else if (role === 'produccion') setActiveTab('produccion');
+    }} />;
+  }
+
   return (
     <div className={`app-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       {/* Mobile Menu Trigger */}
       <button 
         className="mobile-toggle"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 2001,
-          background: 'var(--primary)',
-          color: 'white',
-          border: 'none',
-          padding: '10px',
-          borderRadius: '50%',
-          display: 'none', // Shown via CSS in media query
-          boxShadow: 'var(--shadow-md)'
-        }}
       >
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
@@ -73,21 +85,27 @@ function App() {
           </div>
           <div className="logo-text">
             <h2>El Aromo</h2>
-            <span>Artesanal & Natural</span>
+            <span>BAKERY SYSTEM</span>
           </div>
         </div>
 
         <div className="sidebar-user">
-          <div className="user-avatar">ADM</div>
+          <div className="user-avatar">{userInfo.avatar}</div>
           <div className="user-info">
-            <h4>Guadalupe</h4>
-            <p>Admin Principal</p>
+            <h4>{userInfo.name}</h4>
+            <p>{userInfo.roleName}</p>
           </div>
-          <LogOut size={16} style={{ marginLeft: 'auto', cursor: 'pointer', opacity: 0.5 }} />
+          <motion.div 
+            whileHover={{ scale: 1.1, color: 'var(--primary)' }}
+            onClick={() => setUserRole(null)}
+            style={{ marginLeft: 'auto', cursor: 'pointer' }}
+          >
+            <LogOut size={18} />
+          </motion.div>
         </div>
 
         <nav className="nav-menu">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <div key={item.id} className="nav-item">
               <a
                 href="#"
@@ -116,7 +134,6 @@ function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
           >
-            {activeTab === 'inicio' && <Inicio setActiveTab={handleNavClick} />}
             {activeTab === 'pos' && <PuntoDeVenta />}
             {activeTab === 'clientes' && <ClientesList />}
             {activeTab === 'turnos' && <TurnosList />}
@@ -136,15 +153,6 @@ function App() {
           <MessageCircle size={32} />
         </motion.div>
 
-        {/* Footer for Landing Page */}
-        {activeTab === 'inicio' && (
-          <footer style={{ marginTop: '6rem', padding: '4rem 0', borderTop: '1px solid var(--border-light)', textAlign: 'center' }}>
-            <div className="serif" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>El Aromo Panadería</div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              &copy; {new Date().getFullYear()} El Aromo. Hecho con amor y masa madre.
-            </p>
-          </footer>
-        )}
       </main>
     </div>
   );

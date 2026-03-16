@@ -5,56 +5,52 @@ import {
   Trash2, 
   Plus, 
   Minus, 
-  Calculator,
   CheckCircle,
   X,
-  User,
   Tags,
   Coffee,
   Croissant,
-  Scale
+  Scale,
+  Ticket,
+  ChevronRight,
+  User,
+  CreditCard,
+  Banknote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../services/api';
+
+const MOCK_PRODUCTS = [
+  { id: 1, nombre: 'Pan de Masa Madre', precio: 1200, categoria: 'Panadería', unidad: 'unidad', img: '/prod_pan.png' },
+  { id: 2, nombre: 'Croissant Francés', precio: 850, categoria: 'Pastelería', unidad: 'unidad', img: '/prod_croissant.png' },
+  { id: 3, nombre: 'Hogaza Integral', precio: 1500, categoria: 'Panadería', unidad: 'unidad', img: '/prod_pan.png' },
+  { id: 4, nombre: 'Porción Torta Selva Negra', precio: 2200, categoria: 'Pastelería', unidad: 'porción', img: '/prod_cake.png' },
+  { id: 5, nombre: 'Café Espresso', precio: 950, categoria: 'Cafetería', unidad: 'taza', img: '/gallery3.png' },
+  { id: 6, nombre: 'Pan Casero por Peso', precio: 900, categoria: 'Panadería', unidad: 'kg', porPeso: true, img: '/prod_pan.png' },
+  { id: 7, nombre: 'Facturas Surtidas', precio: 450, categoria: 'Pastelería', unidad: 'unidad', img: '/prod_croissant.png' },
+  { id: 8, nombre: 'Budín de Limón', precio: 1800, categoria: 'Pastelería', unidad: 'unidad', img: '/prod_cake.png' },
+];
 
 const PuntoDeVenta = () => {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [cart, setCart] = useState([]);
-  const [discount, setDiscount] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('Efectivo');
 
   const categories = [
-    { id: 'Todos', label: 'Todos', icon: Tags },
-    { id: 'Panadería', label: 'Panadería', icon: Croissant },
-    { id: 'Pastelería', label: 'Pastelería', icon: Croissant },
-    { id: 'Cafetería', label: 'Cafetería', icon: Coffee },
-    { id: 'Salados', label: 'Salados', icon: Tags },
-    { id: 'A Peso', label: 'A Peso', icon: Scale },
+    { id: 'Todos', label: 'Todo', icon: Tags },
+    { id: 'Panadería', label: 'Panes', icon: Croissant },
+    { id: 'Pastelería', label: 'Pasteles', icon: Croissant },
+    { id: 'Cafetería', label: 'Café', icon: Coffee },
+    { id: 'A Peso', label: 'Por Peso', icon: Scale },
   ];
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  useEffect(() => {
-    let filtered = products.filter(p => 
-      p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    if (activeCategory === 'A Peso') {
-      filtered = filtered.filter(p => p.porPeso);
-    } else if (activeCategory !== 'Todos') {
-      filtered = filtered.filter(p => p.categoria === activeCategory);
-    }
-    setFilteredProducts(filtered);
-  }, [searchTerm, activeCategory, products]);
-
-  const loadProducts = async () => {
-    const data = await api.productos.getAll();
-    setProducts(data);
-  };
+  const filteredProducts = MOCK_PRODUCTS.filter(p => {
+    const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = activeCategory === 'Todos' || 
+                           (activeCategory === 'A Peso' ? p.porPeso : p.categoria === activeCategory);
+    return matchesSearch && matchesCategory;
+  });
 
   const addToCart = (product) => {
     setCart(prev => {
@@ -64,7 +60,7 @@ const PuntoDeVenta = () => {
           item.id === product.id ? { ...item, cantidad: item.cantidad + (item.porPeso ? 0.25 : 1) } : item
         );
       }
-      return [...prev, { ...product, cantidad: 1 }];
+      return [...prev, { ...product, cantidad: product.porPeso ? 0.25 : 1 }];
     });
   };
 
@@ -83,230 +79,672 @@ const PuntoDeVenta = () => {
   };
 
   const subtotal = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-  const total = subtotal * (1 - discount / 100);
+  const total = subtotal;
 
-  const handleCharge = async () => {
+  const handleCharge = () => {
     if (cart.length === 0) return;
-    
-    await api.ventas.create({
-      cliente: 'Consumidor Final',
-      total: total,
-      items: cart.length
-    });
-    
     setShowSuccess(true);
     setCart([]);
-    setDiscount(0);
-    setTimeout(() => setShowSuccess(false), 3000);
+    setTimeout(() => setShowSuccess(false), 2500);
   };
 
   return (
-    <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', height: 'calc(100vh - 100px)' }}>
-      {/* Products Area */}
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <header style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-            <div className="logo-icon" style={{ background: '#EED7C5', color: 'var(--bakery-primary)' }}>
-              <Calculator size={22} />
-            </div>
-            <h1 className="serif" style={{ fontSize: '2.5rem' }}>Caja & Ventas</h1>
+    <div className="pos-maestro-container">
+      <div className="pos-main">
+        {/* Top bar with Search and Stats */}
+        <header className="pos-header">
+          <div className="pos-title">
+            <h1 className="serif">Terminal de Venta</h1>
+            <p>Maestro Panadero: <span>Guadalupe</span></p>
           </div>
-          <p style={{ color: 'var(--bakery-text-muted)', fontSize: '0.95rem' }}>
-            Punto de venta. Productos por unidad y por peso.
-          </p>
+          <div className="pos-search-wrapper">
+            <Search size={20} color="var(--primary)" />
+            <input 
+              type="text" 
+              placeholder="Buscar producto exquisito..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </header>
 
-        <div className="search-bar">
-          <Search size={20} color="var(--bakery-text-muted)" />
-          <input 
-            type="text" 
-            placeholder="Buscar producto..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="category-pills">
+        {/* Categories Section */}
+        <nav className="pos-categories">
           {categories.map(cat => (
-            <button 
+            <motion.button 
               key={cat.id} 
-              className={`category-pill ${activeCategory === cat.id ? 'active' : ''}`}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveCategory(cat.id)}
+              className={`pos-category-btn ${activeCategory === cat.id ? 'active' : ''}`}
             >
-              <cat.icon size={16} />
+              <cat.icon size={18} />
               {cat.label}
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </nav>
 
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '2rem' }}>
-          <div className="product-grid">
-            {filteredProducts.map(product => (
-              <motion.div 
-                key={product.id} 
-                className="bakery-card product-card"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => addToCart(product)}
-              >
-                <div className="product-image-container">
-                  {product.porPeso && <span className="badge-peso" style={{ position: 'absolute', top: '10px', right: '10px' }}>Peso</span>}
-                  <div style={{ fontSize: '3rem' }}>{product.categoria === 'Panadería' ? '🥖' : product.categoria === 'Pastelería' ? '🍰' : '☕'}</div>
-                </div>
-                <h4 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{product.nombre}</h4>
-                <p style={{ fontSize: '0.75rem', color: 'var(--bakery-text-muted)', marginBottom: '0.5rem' }}>$/{product.unidad}</p>
-                <p className="serif" style={{ fontSize: '1.25rem', color: 'var(--bakery-primary)', fontWeight: 700 }}>
-                  ${product.precio.toLocaleString()}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Ticket Sidebar */}
-      <div className="bakery-card" style={{ display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--bakery-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <ShoppingCart size={20} /> Ticket
-          </h3>
-          <span style={{ 
-            background: 'var(--bakery-primary)', 
-            color: 'white', 
-            borderRadius: '50%', 
-            width: '24px', 
-            height: '24px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontSize: '0.75rem',
-            fontWeight: 700
-          }}>
-            {cart.length}
-          </span>
-        </div>
-
-        <div style={{ padding: '1.25rem', background: '#FDFBF7' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'white', borderRadius: '12px', border: '1px solid var(--bakery-border)' }}>
-              <User size={18} color="var(--bakery-primary)" />
-              <select style={{ border: 'none', background: 'transparent', width: '100%', fontSize: '0.9rem', outline: 'none' }}>
-                <option>Cliente Ocasional</option>
-              </select>
-            </div>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
-          <AnimatePresence>
-            {cart.map(item => (
-              <motion.div 
-                key={item.id} 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px dashed var(--bakery-border)' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{item.nombre}</div>
-                  <button onClick={() => removeFromCart(item.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ff4d4d' }}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--bakery-text-muted)' }}>
-                      Precio unitario: <span style={{ color: 'var(--bakery-text)', fontWeight: 600 }}>${item.precio}</span>
+        {/* Products Grid */}
+        <div className="pos-grid-container">
+          <div className="pos-products-grid">
+            <AnimatePresence>
+              {filteredProducts.map(product => (
+                <motion.div 
+                  key={product.id} 
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ y: -8 }}
+                  className="maestro-product-card"
+                  onClick={() => addToCart(product)}
+                >
+                  <div className="card-img-wrapper">
+                    <img src={product.img} alt={product.nombre} />
+                    {product.porPeso && <span className="badge-weight">PESO</span>}
+                    <div className="card-overlay">
+                      <Plus size={32} color="white" />
                     </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8f8f8', padding: '0.25rem 0.5rem', borderRadius: '8px' }}>
-                    <button className="qty-btn" onClick={() => updateQuantity(item.id, item.porPeso ? -0.25 : -1)}><Minus size={14} /></button>
-                    <span style={{ minWidth: '40px', textAlign: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
-                      {item.cantidad}{item.porPeso ? 'kg' : ''}
-                    </span>
-                    <button className="qty-btn" onClick={() => updateQuantity(item.id, item.porPeso ? 0.25 : 1)}><Plus size={14} /></button>
+                  <div className="card-content">
+                    <span className="card-cat">{product.categoria}</span>
+                    <h3>{product.nombre}</h3>
+                    <div className="card-footer">
+                      <span className="price">${product.precio.toLocaleString()}</span>
+                      <span className="unit">/ {product.unidad}</span>
+                    </div>
                   </div>
-                  <div style={{ fontWeight: 700 }}>${(item.precio * item.cantidad).toLocaleString()}</div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {cart.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--bakery-text-muted)' }}>
-              <ShoppingCart size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-              <p>El ticket está vacío</p>
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding: '1.5rem', background: '#FFF7F2' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Tags size={14} /> Descuento</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <input 
-                type="number" 
-                value={discount} 
-                onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                style={{ width: '40px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center', padding: '2px' }}
-              /> %
-            </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--bakery-text-muted)', fontSize: '0.9rem' }}>
-            <span>Subtotal:</span>
-            <span>${subtotal.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: 700 }}>Total:</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--bakery-primary)' }}>${total.toLocaleString()}</span>
-          </div>
-
-          <button 
-            className="btn-bakery" 
-            style={{ width: '100%', padding: '1.25rem', justifyContent: 'center' }}
-            onClick={handleCharge}
-            disabled={cart.length === 0}
-          >
-            <CheckCircle size={22} /> COBRAR
-          </button>
         </div>
       </div>
 
+      {/* Luxury Cart Sidebar - Parchment Aesthetic */}
+      <aside className="pos-sidebar">
+        <div className="cart-surface">
+          <div className="cart-header">
+            <div className="header-top">
+              <div className="cart-icon-bg">
+                <ShoppingCart size={22} />
+              </div>
+              <div>
+                <h2>Su Pedido</h2>
+                <p>{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+              </div>
+            </div>
+            <div className="item-count">{cart.length} productos</div>
+          </div>
+
+          <div className="cart-items-list">
+            <AnimatePresence initial={false}>
+              {cart.map(item => (
+                <motion.div 
+                  key={item.id} 
+                  initial={{ opacity: 0, height: 0, x: 20 }}
+                  animate={{ opacity: 1, height: 'auto', x: 0 }}
+                  exit={{ opacity: 0, height: 0, x: -20 }}
+                  className="cart-item-row"
+                >
+                  <div className="item-main">
+                    <div className="item-info">
+                      <span className="item-name">{item.nombre}</span>
+                      <span className="item-price-unit">${item.precio} x {item.unidad}</span>
+                    </div>
+                    <button className="item-remove" onClick={() => removeFromCart(item.id)}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="item-controls">
+                    <div className="qty-picker">
+                      <button onClick={() => updateQuantity(item.id, item.porPeso ? -0.25 : -1)}><Minus size={14} /></button>
+                      <span className="qty-val">{item.cantidad}{item.porPeso ? 'kg' : ''}</span>
+                      <button onClick={() => updateQuantity(item.id, item.porPeso ? 0.25 : 1)}><Plus size={14} /></button>
+                    </div>
+                    <span className="item-total-price">${(item.precio * item.cantidad).toLocaleString()}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {cart.length === 0 && (
+              <div className="empty-cart-message">
+                <Ticket size={48} className="empty-icon" />
+                <p>Esperando la selección del maestro...</p>
+              </div>
+            )}
+          </div>
+
+          <div className="cart-footer">
+            <div className="payment-selector">
+              <button 
+                className={paymentMethod === 'Efectivo' ? 'active' : ''} 
+                onClick={() => setPaymentMethod('Efectivo')}
+              >
+                <Banknote size={16} /> Efectivo
+              </button>
+              <button 
+                className={paymentMethod === 'Tarjeta' ? 'active' : ''}
+                onClick={() => setPaymentMethod('Tarjeta')}
+              >
+                <CreditCard size={16} /> Tarjeta
+              </button>
+            </div>
+
+            <div className="totals-area">
+              <div className="tot-row">
+                <span>Subtotal</span>
+                <span>${subtotal.toLocaleString()}</span>
+              </div>
+              <div className="tot-row main">
+                <span>Total a Pagar</span>
+                <span className="grand-total">${total.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="checkout-btn"
+              disabled={cart.length === 0}
+              onClick={handleCharge}
+            >
+              FINALIZAR VENTA <ChevronRight size={20} />
+            </motion.button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Floating Success Notification */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            style={{
-              position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-              zIndex: 1000, background: 'white', padding: '2rem', borderRadius: '24px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.1)', textAlign: 'center'
-            }}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="success-toast"
           >
-            <div style={{ color: '#4CAF50', marginBottom: '1rem' }}><CheckCircle size={64} /></div>
-            <h2 className="serif">¡Venta Exitosa!</h2>
-            <p style={{ color: 'var(--bakery-text-muted)' }}>El ticket ha sido procesado correctamente.</p>
+            <div className="toast-icon"><CheckCircle size={24} /></div>
+            <div className="toast-content">
+              <h4>Venta Procesada</h4>
+              <p>El ticket fue generado con éxito.</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <style>{`
-        .qty-btn {
+        .pos-maestro-container {
+          display: grid;
+          grid-template-columns: 1fr 420px;
+          gap: 1.5rem;
+          height: calc(100vh - 100px);
+          max-height: 900px;
+          color: var(--text-main);
+        }
+
+        .pos-main {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          overflow: hidden;
+        }
+
+        .pos-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          padding: 0.5rem 0;
+        }
+
+        .pos-title h1 {
+          font-size: 2.25rem;
+          margin: 0;
+          color: var(--primary);
+        }
+
+        .pos-title p {
+          margin: 4px 0 0 0;
+          font-size: 0.9rem;
+          color: var(--text-muted);
+        }
+
+        .pos-title span {
+          color: var(--text-main);
+          font-weight: 700;
+        }
+
+        .pos-search-wrapper {
           background: white;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          width: 28px;
-          height: 28px;
+          padding: 0.75rem 1.25rem;
+          border-radius: 16px;
+          border: 1px solid var(--border-light);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 350px;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .pos-search-wrapper input {
+          border: none;
+          background: transparent;
+          outline: none;
+          width: 100%;
+          font-size: 0.95rem;
+          font-family: inherit;
+        }
+
+        .pos-categories {
+          display: flex;
+          gap: 0.75rem;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+
+        .pos-category-btn {
+          background: white;
+          border: 1px solid var(--border-light);
+          padding: 8px 18px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          color: var(--text-muted);
+          white-space: nowrap;
+        }
+
+        .pos-category-btn.active {
+          background: var(--primary);
+          color: white;
+          border-color: var(--primary);
+          box-shadow: 0 4px 12px rgba(212, 106, 42, 0.2);
+        }
+
+        .pos-grid-container {
+          flex: 1;
+          overflow-y: auto;
+          padding: 4px;
+        }
+
+        .pos-products-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 1.25rem;
+        }
+
+        .maestro-product-card {
+          background: white;
+          border-radius: 20px;
+          overflow: hidden;
+          border: 1px solid var(--border-light);
+          cursor: pointer;
+          transition: all 0.3s;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .maestro-product-card:hover {
+          box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+          border-color: var(--primary-light);
+        }
+
+        .card-img-wrapper {
+          height: 120px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .card-img-wrapper img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.5s;
+        }
+
+        .maestro-product-card:hover .card-img-wrapper img {
+          transform: scale(1.1);
+        }
+
+        .card-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(212, 106, 42, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .maestro-product-card:hover .card-overlay {
+          opacity: 1;
+        }
+
+        .badge-weight {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(255,255,255,0.9);
+          backdrop-filter: blur(4px);
+          padding: 2px 8px;
+          border-radius: 20px;
+          font-size: 0.65rem;
+          font-weight: 800;
+          color: var(--primary);
+        }
+
+        .card-content {
+          padding: 1rem;
+        }
+
+        .card-cat {
+          font-size: 0.65rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--text-muted);
+        }
+
+        .card-content h3 {
+          margin: 4px 0 12px 0;
+          font-size: 0.95rem;
+          font-weight: 700;
+          line-height: 1.3;
+        }
+
+        .card-footer {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+        }
+
+        .card-footer .price {
+          font-family: 'Playfair Display', serif;
+          font-weight: 800;
+          font-size: 1.15rem;
+          color: var(--primary);
+        }
+
+        .card-footer .unit {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+        }
+
+        /* Sidebar Styling */
+        .pos-sidebar {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .cart-surface {
+          background: #fafafa;
+          height: 100%;
+          border-radius: 30px;
+          border: 1px solid var(--border-light);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .cart-header {
+          padding: 1.5rem;
+          background: white;
+          border-bottom: 1px dashed var(--border-light);
+        }
+
+        .header-top {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .cart-icon-bg {
+          width: 44px;
+          height: 44px;
+          background: var(--bg-app);
+          color: var(--primary);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .cart-header h2 {
+          margin: 0;
+          font-family: 'Playfair Display', serif;
+          font-size: 1.25rem;
+        }
+
+        .cart-header p {
+          margin: 0;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          text-transform: capitalize;
+        }
+
+        .item-count {
+          font-size: 0.8rem;
+          font-weight: 800;
+          color: var(--primary);
+          background: var(--primary-light);
+          padding: 4px 12px;
+          border-radius: 20px;
+          display: inline-block;
+        }
+
+        .cart-items-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .cart-item-row {
+          background: white;
+          padding: 12px;
+          border-radius: 16px;
+          border: 1px solid #f0f0f0;
+        }
+
+        .item-main {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 12px;
+        }
+
+        .item-name {
+          display: block;
+          font-weight: 700;
+          font-size: 0.9rem;
+        }
+
+        .item-price-unit {
+          font-size: 0.7rem;
+          color: var(--text-muted);
+        }
+
+        .item-remove {
+          background: transparent;
+          border: none;
+          color: #ef4444;
+          cursor: pointer;
+          opacity: 0.5;
+        }
+
+        .item-controls {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .qty-picker {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: var(--bg-app);
+          padding: 4px;
+          border-radius: 8px;
+        }
+
+        .qty-picker button {
+          width: 24px;
+          height: 24px;
+          border-radius: 6px;
+          border: none;
+          background: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .qty-val {
+          font-size: 0.85rem;
+          font-weight: 800;
+          min-width: 40px;
+          text-align: center;
+        }
+
+        .item-total-price {
+          font-weight: 800;
+          color: var(--text-main);
+        }
+
+        .empty-cart-message {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          opacity: 0.3;
+          text-align: center;
+        }
+
+        .empty-icon {
+          margin-bottom: 1rem;
+        }
+
+        .cart-footer {
+          padding: 1.5rem;
+          background: white;
+          border-top: 1px dashed var(--border-light);
+        }
+
+        .payment-selector {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin-bottom: 1.5rem;
+        }
+
+        .payment-selector button {
+          padding: 10px;
+          border-radius: 12px;
+          border: 1px solid var(--border-light);
+          background: white;
+          font-size: 0.8rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
           cursor: pointer;
           transition: all 0.2s;
         }
-        .qty-btn:hover {
-          background: var(--bakery-primary);
+
+        .payment-selector button.active {
+          background: var(--text-main);
           color: white;
-          border-color: var(--bakery-primary);
+          border-color: var(--text-main);
+        }
+
+        .totals-area {
+          margin-bottom: 1.5rem;
+        }
+
+        .tot-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.9rem;
+          margin-bottom: 6px;
+        }
+
+        .tot-row.main {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid var(--border-light);
+        }
+
+        .grand-total {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.75rem;
+          color: var(--primary);
+          font-weight: 900;
+        }
+
+        .checkout-btn {
+          width: 100%;
+          padding: 1.25rem;
+          background: var(--primary);
+          color: white;
+          border: none;
+          border-radius: 16px;
+          font-size: 1rem;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          cursor: pointer;
+          box-shadow: 0 10px 20px rgba(212, 106, 42, 0.2);
+        }
+
+        .checkout-btn:disabled {
+          background: #ccc;
+          box-shadow: none;
+          cursor: not-allowed;
+        }
+
+        .success-toast {
+          position: fixed;
+          bottom: 40px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          padding: 1rem 2rem;
+          border-radius: 20px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          border: 1px solid var(--success);
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          z-index: 5000;
+        }
+
+        .toast-icon {
+          color: var(--success);
+        }
+
+        .toast-content h4 {
+          margin: 0;
+          font-size: 1rem;
+        }
+
+        .toast-content p {
+          margin: 2px 0 0 0;
+          font-size: 0.8rem;
+          color: var(--text-muted);
         }
       `}</style>
     </div>
