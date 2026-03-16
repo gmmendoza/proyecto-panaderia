@@ -6,8 +6,9 @@ export default defineConfig({
   base: "./",
   plugins: [react()],
   build: {
-    outDir: '../',
-    emptyOutDir: false,
+    outDir: 'dist',
+    emptyOutDir: true,
+    assetsDir: 'assets',
   },
   server: {
     proxy: {
