@@ -4,6 +4,10 @@ client/node_modules/
 
 # Production
 client/dist/
+!index.html
+!assets/
+!.nojekyll
+!vite.svg
 
 # Database
 *.sqlite
