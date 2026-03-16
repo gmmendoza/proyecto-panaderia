@@ -1,48 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
 :root {
-  /* Premium Bakery Palette - Modern & Sophisticated */
-  --bg-app: #FAF7F5;
+  /* Premium Bakery Palette - Freshly Baked & Artisanal */
+  --bg-app: #FDFBF7;
   --bg-surface: #ffffff;
   --bg-surface-hover: #FFF9F5;
 
-  --border-light: rgba(214, 188, 172, 0.3);
-  --border-focus: rgba(230, 106, 37, 0.4);
+  --border-light: rgba(212, 106, 42, 0.1);
+  --border-focus: rgba(212, 106, 42, 0.3);
 
   --text-main: #2D1B11;
   --text-muted: #85756C;
 
   /* Artisan Primary Palette */
-  --primary: #D15A1D;
+  --primary: #D46A2A;
   --primary-hover: #B84C18;
   --primary-light: #FFF0E6;
 
   /* Status Colors */
-  --success: #27A67A;
-  --success-bg: #E6F6F0;
-  --success-text: #1E7D5B;
-
+  --success: #6D8B74;
+  --success-bg: #F0F5F1;
   --danger: #D94545;
-  --danger-bg: #FFF1F1;
-  --danger-text: #A63030;
-
   --warning: #E29A26;
-  --warning-bg: #FFF8E6;
-  --warning-text: #9E6B1B;
 
-  /* Shadows - Modern Depth */
-  --shadow-sm: 0 4px 12px rgba(45, 27, 17, 0.04);
-  --shadow-md: 0 16px 32px rgba(45, 27, 17, 0.08);
-  --shadow-lg: 0 24px 56px rgba(45, 27, 17, 0.12);
-  --shadow-modal: 0 40px 80px -12px rgba(45, 27, 17, 0.25);
+  /* Shadows - Soft & Deep */
+  --shadow-sm: 0 4px 20px rgba(45, 27, 17, 0.05);
+  --shadow-md: 0 12px 40px rgba(45, 27, 17, 0.08);
+  --shadow-lg: 0 24px 60px rgba(45, 27, 17, 0.12);
 
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.4);
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
 }
 
 * {
@@ -374,35 +362,109 @@ h6 {
   font-family: 'Playfair Display', serif;
 }
 
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+/* Landing Page Sections */
+.hero-section {
+  position: relative;
+  height: 500px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 4rem;
+  display: flex;
+  align-items: center;
+  padding: 4rem;
+  background-size: cover;
+  background-position: center;
+  color: white;
 }
 
-/* Modals */
-.modal-overlay {
-  background-color: rgba(28, 21, 18, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(45, 27, 17, 0.8) 0%, rgba(45, 27, 17, 0.2) 100%);
+  z-index: 1;
 }
 
-.modal-content {
-  border-radius: 24px;
-  padding: 2.5rem;
-  border: 1px solid var(--glass-border);
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 500px;
 }
 
-/* Staggered List Animation */
-.list-item-enter {
-  animation: slideInLeft 0.3s ease-out backwards;
+.hero-content h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+  color: white;
+}
+
+.hero-content p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+/* Gallery Grid */
+.bakery-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 250px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.4s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.03);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Floating WhatsApp */
+.whatsapp-float {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 60px;
+  height: 60px;
+  background-color: #25D366;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(37, 211, 102, 0.3);
+  z-index: 2000;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.1) translateY(-5px);
+  box-shadow: 0 15px 30px rgba(37, 211, 102, 0.4);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
+  from { opacity: 0; transform: translateX(-30px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
