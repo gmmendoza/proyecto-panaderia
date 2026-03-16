@@ -92,7 +92,7 @@ export default function TurnosList() {
                 <table className="data-table">
                     <thead>
                         <tr>
-                            <th>Identificación</th>
+                            <th>Cliente</th>
                             <th>Programación</th>
                             <th>Estado</th>
                             <th style={{ textAlign: 'right' }}>Acciones</th>
@@ -105,30 +105,49 @@ export default function TurnosList() {
                             <tr>
                                 <td colSpan="4">
                                     <div className="empty-state">
-                                        <ClipboardList className="empty-state-icon" size={32} strokeWidth={1.5} />
-                                        <p className="empty-state-text">No hay turnos registrados.</p>
+                                        <ClipboardList className="empty-state-icon" size={48} strokeWidth={1} />
+                                        <p className="empty-state-text">No hay pedidos registrados.</p>
+                                        <button className="btn btn-secondary" style={{ marginTop: '1rem' }} onClick={() => setIsModalOpen(true)}>Programar primer pedido</button>
                                     </div>
                                 </td>
                             </tr>
                         ) : (
-                            turnos.map(turno => {
+                            turnos.map((turno, index) => {
                                 const isCompleted = turno.estado === 'Completado';
                                 return (
-                                    <tr key={turno.id}>
+                                    <tr key={turno.id} className="list-item-enter" style={{ animationDelay: `${index * 0.05}s` }}>
                                         <td>
-                                            <div style={{ fontWeight: 500, color: 'var(--text-main)' }}>
-                                                {turno.Cliente ? `${turno.Cliente.nombre} ${turno.Cliente.apellido}` : 'Desconocido'}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{
+                                                    width: '36px', height: '36px', borderRadius: '10px',
+                                                    background: isCompleted ? 'var(--success-bg)' : 'var(--warning-bg)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: isCompleted ? 'var(--success-text)' : 'var(--warning-text)'
+                                                }}>
+                                                    <UsersRound size={18} strokeWidth={2.5} />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                                                        {turno.Cliente ? `${turno.Cliente.nombre} ${turno.Cliente.apellido}` : 'Cargando...'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Ticket: #TK-{turno.id.toString().slice(-4)}</div>
+                                                </div>
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID Registro: {turno.id}</div>
                                         </td>
                                         <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontSize: '0.875rem' }}>
-                                                <Timer size={14} className="empty-state-icon" style={{ marginBottom: 0 }} />
-                                                {new Date(turno.fechaHora).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: 500 }}>
+                                                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                                    <Timer size={14} strokeWidth={2.5} />
+                                                </div>
+                                                <div>
+                                                    <div>{new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs</div>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <div className={`status-badge ${isCompleted ? 'status-completed' : 'status-pending'}`}>
+                                            <div className={`status-badge ${isCompleted ? 'status-completed' : 'status-pending'}`} style={{ gap: '6px', padding: '6px 12px' }}>
+                                                {isCompleted ? <CheckCircle2 size={12} strokeWidth={3} /> : <Timer size={12} strokeWidth={3} />}
                                                 {turno.estado}
                                             </div>
                                         </td>
@@ -137,20 +156,20 @@ export default function TurnosList() {
                                                 {!isCompleted && (
                                                     <button
                                                         className="btn btn-secondary"
-                                                        style={{ padding: '6px 10px', color: 'var(--success-text)', background: 'var(--success-bg)', borderColor: 'transparent' }}
+                                                        style={{ padding: '8px', width: '36px', height: '36px', color: 'var(--success-text)', background: 'var(--success-bg)', borderColor: 'transparent' }}
                                                         onClick={() => handleStatusChange(turno.id, 'Completado')}
                                                         title="Marcar como Completado"
                                                     >
-                                                        <CheckCircle2 size={14} strokeWidth={2.5} />
+                                                        <CheckCircle2 size={16} strokeWidth={2.5} />
                                                     </button>
                                                 )}
                                                 <button
                                                     className="btn btn-secondary btn-danger"
-                                                    style={{ padding: '6px 10px' }}
+                                                    style={{ padding: '8px', width: '36px', height: '36px' }}
                                                     onClick={() => handleDelete(turno.id)}
                                                     title="Eliminar"
                                                 >
-                                                    <Trash2 size={14} />
+                                                    <Trash2 size={16} strokeWidth={2} />
                                                 </button>
                                             </div>
                                         </td>
@@ -160,6 +179,7 @@ export default function TurnosList() {
                         )}
                     </tbody>
                 </table>
+
             </div>
 
             {/* Modal */}

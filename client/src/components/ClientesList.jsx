@@ -92,45 +92,61 @@ export default function ClientesList() {
                             <tr>
                                 <td colSpan="4">
                                     <div className="empty-state">
-                                        <UsersRound className="empty-state-icon" size={32} strokeWidth={1.5} />
+                                        <UsersRound className="empty-state-icon" size={48} strokeWidth={1} />
                                         <p className="empty-state-text">No hay clientes registrados.</p>
+                                        <button className="btn btn-secondary" style={{ marginTop: '1rem' }} onClick={() => setIsModalOpen(true)}>Crear el primer cliente</button>
                                     </div>
                                 </td>
                             </tr>
                         ) : (
-                            clientes.map(cliente => (
-                                <tr key={cliente.id}>
+                            clientes.map((cliente, index) => (
+                                <tr key={cliente.id} className="list-item-enter" style={{ animationDelay: `${index * 0.05}s` }}>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                             <div style={{
-                                                width: '32px', height: '32px', borderRadius: '50%',
-                                                background: 'var(--bg-surface-hover)',
+                                                width: '40px', height: '40px', borderRadius: '12px',
+                                                background: 'linear-gradient(135deg, #FFF9F5 0%, #F5E6DA 100%)',
                                                 border: '1px solid var(--border-light)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600
+                                                color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 700,
+                                                boxShadow: 'var(--shadow-sm)'
                                             }}>
                                                 {cliente.nombre.charAt(0)}{cliente.apellido.charAt(0)}
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 500, color: 'var(--text-main)' }}>{cliente.nombre} {cliente.apellido}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {cliente.id}</div>
+                                                <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.95rem' }}>{cliente.nombre} {cliente.apellido}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Ref: #CL{cliente.id.toString().slice(-4)}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                                            <PhoneCall size={14} /> {cliente.telefono || '—'}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>
+                                            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#F0F9FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0369A1' }}>
+                                                <PhoneCall size={14} strokeWidth={2.5} />
+                                            </div>
+                                            {cliente.telefono || 'Sin teléfono'}
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 500, color: cliente.saldo > 0 ? 'var(--danger)' : 'var(--text-main)' }}>
-                                            <Banknote size={14} className={cliente.saldo > 0 ? '' : 'empty-state-icon'} style={{ marginBottom: 0 }} />
-                                            ${Number(cliente.saldo).toFixed(2)}
+                                        <div style={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            gap: '8px', 
+                                            fontWeight: 700, 
+                                            padding: '4px 12px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            background: cliente.saldo > 0 ? 'var(--danger-bg)' : 'var(--success-bg)',
+                                            color: cliente.saldo > 0 ? 'var(--danger-text)' : 'var(--success-text)'
+                                        }}>
+                                            <Banknote size={16} strokeWidth={2.5} />
+                                            ${Math.abs(Number(cliente.saldo)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                            {cliente.saldo > 0 && <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(Deuda)</span>}
                                         </div>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                        <button className="btn btn-secondary btn-danger" style={{ padding: '6px 10px' }} onClick={() => handleDelete(cliente.id)}>
-                                            <Trash2 size={14} />
+                                        <button className="btn btn-secondary btn-danger" style={{ padding: '8px', minWidth: '36px', height: '36px' }} onClick={() => handleDelete(cliente.id)}>
+                                            <Trash2 size={16} strokeWidth={2} />
                                         </button>
                                     </td>
                                 </tr>
@@ -138,6 +154,7 @@ export default function ClientesList() {
                         )}
                     </tbody>
                 </table>
+
             </div>
 
             {/* Modal */}

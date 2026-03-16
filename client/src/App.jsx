@@ -20,31 +20,25 @@ function App() {
 
   return (
     <div className="app-container">
+      <div className="demo-banner">
+        Interactive Demo - Persistencia con LocalStorage - El Aromo Bakery
+      </div>
+      
       {/* Sidebar Navigation */}
       <aside className="sidebar">
-        <div className="brand" style={{ padding: '32px 24px', borderBottom: 'none' }}>
-          <div className="brand-icon" style={{ 
-            width: '44px', 
-            height: '44px', 
-            background: 'linear-gradient(135deg, var(--primary), #EBB05E)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 16px rgba(209, 90, 29, 0.2)'
-          }}>
-            <PastryBagIcon size={22} strokeWidth={2.5} color="white" />
+        <div className="brand">
+          <div className="brand-icon">
+            <PastryBagIcon size={24} strokeWidth={2.5} color="white" />
           </div>
           <div className="brand-text">
-            <h2 style={{ 
-              fontFamily: 'Playfair Display, serif', 
-              fontSize: '1.4rem', 
-              color: 'var(--secondary, #1C1512)',
-              lineHeight: 1.1 
-            }}>El Aromo</h2>
+            <h2>El Aromo</h2>
             <span style={{ 
               fontSize: '0.65rem', 
               textTransform: 'uppercase', 
               color: 'var(--text-muted)',
               fontWeight: 700,
-              letterSpacing: '1.5px'
+              letterSpacing: '1.5px',
+              display: 'block'
             }}>Panadería & Pastelería</span>
           </div>
         </div>
@@ -54,15 +48,15 @@ function App() {
             className={`nav-item ${activeTab === 'clientes' ? 'active' : ''}`}
             onClick={() => setActiveTab('clientes')}
           >
-            <UsersRound size={18} strokeWidth={2} />
-            Clientes
+            <UsersRound size={20} strokeWidth={2.5} />
+            <span>Clientes</span>
           </div>
           <div
             className={`nav-item ${activeTab === 'turnos' ? 'active' : ''}`}
             onClick={() => setActiveTab('turnos')}
           >
-            <ClipboardList size={18} strokeWidth={2} />
-            Turnos y Pedidos
+            <ClipboardList size={20} strokeWidth={2.5} />
+            <span>Pedidos</span>
           </div>
         </nav>
       </aside>
@@ -72,10 +66,10 @@ function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             {activeTab === 'clientes' && <ClientesList />}
             {activeTab === 'turnos' && <TurnosList />}
@@ -84,6 +78,7 @@ function App() {
       </main>
     </div>
   );
+
 }
 
 export default App;
