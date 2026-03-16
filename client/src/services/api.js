@@ -20,31 +20,33 @@ const initialTurnos = [
     { 
         id: 1, 
         clienteId: 1, 
-        fechaHora: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+        fechaHora: new Date(Date.now() + 86400000).toISOString(),
         estado: 'Pendiente',
         Cliente: { id: 1, nombre: 'Guadalupe', apellido: 'Mendoza' }
     },
     { 
         id: 2, 
         clienteId: 2, 
-        fechaHora: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        fechaHora: new Date(Date.now() - 3600000).toISOString(),
         estado: 'Completado',
         Cliente: { id: 2, nombre: 'Ana', apellido: 'García' }
-    },
-    { 
-        id: 3, 
-        clienteId: 4, 
-        fechaHora: new Date(Date.now() + 172800000).toISOString(), // In 2 days
-        estado: 'Pendiente',
-        Cliente: { id: 4, nombre: 'Roberto', apellido: 'Sánchez' }
-    },
-    { 
-        id: 4, 
-        clienteId: 6, 
-        fechaHora: new Date(Date.now() + 259200000).toISOString(), // In 3 days
-        estado: 'Pendiente',
-        Cliente: { id: 6, nombre: 'Carlos', apellido: 'Gómez' }
     }
+];
+
+const initialProductos = [
+    { id: 1, nombre: 'Pan Francés', precio: 1200, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 45 },
+    { id: 2, nombre: 'Pan de Masa Madre', precio: 2800, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 12 },
+    { id: 3, nombre: 'Baguette', precio: 950, unidad: 'u', categoria: 'Panadería', porPeso: false, stock: 30 },
+    { id: 4, nombre: 'Pan de Campo', precio: 1500, unidad: 'u', categoria: 'Panadería', porPeso: false, stock: 15 },
+    { id: 5, nombre: 'Medialunas', precio: 450, unidad: 'u', categoria: 'Pastelería', porPeso: false, stock: 120 },
+    { id: 6, nombre: 'Tarta de Fresa', precio: 8500, unidad: 'u', categoria: 'Pastelería', porPeso: false, stock: 8 },
+    { id: 7, nombre: 'Café Expresso', precio: 1200, unidad: 'u', categoria: 'Cafetería', porPeso: false, stock: 999 },
+    { id: 8, nombre: 'Sándwich de Miga', precio: 800, unidad: 'u', categoria: 'Salados', porPeso: false, stock: 50 }
+];
+
+const initialVentas = [
+    { id: 1, fecha: new Date().toISOString(), cliente: 'Consumidor Final', total: 4500, items: 3 },
+    { id: 2, fecha: new Date(Date.now() - 86400000).toISOString(), cliente: 'Ana García', total: 2800, items: 1 }
 ];
 
 const getStorage = (key, initial) => {
@@ -142,6 +144,35 @@ export const api = {
             }
             await fetch(`/api/turnos/${id}`, { method: 'DELETE' });
             return true;
+        }
+    },
+    productos: {
+        getAll: async () => {
+            if (isMock) return getStorage('bakery_productos', initialProductos);
+            const res = await fetch('/api/productos');
+            return res.json();
+        }
+    },
+    ventas: {
+        getAll: async () => {
+            if (isMock) return getStorage('bakery_ventas', initialVentas);
+            const res = await fetch('/api/ventas');
+            return res.json();
+        },
+        create: async (data) => {
+            if (isMock) {
+                const list = getStorage('bakery_ventas', initialVentas);
+                const newItem = { ...data, id: list.length + 1, fecha: new Date().toISOString() };
+                const newList = [newItem, ...list];
+                localStorage.setItem('bakery_ventas', JSON.stringify(newList));
+                return newItem;
+            }
+            const res = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
         }
     }
 };
