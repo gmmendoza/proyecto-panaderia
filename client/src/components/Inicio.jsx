@@ -13,9 +13,9 @@ import { motion } from 'framer-motion';
 
 const Inicio = ({ setActiveTab, userRole }) => {
   const categories = [
-    { title: 'Panes de Masa Madre', desc: 'Fermentación lenta y natural.', img: '/gallery2.png' },
-    { title: 'Pastelería Premium', desc: 'Dulces momentos artesanales.', img: '/gallery3.png' },
-    { title: 'Tradición y Aroma', desc: 'Recetas de la abuela.', img: '/gallery1.png' },
+    { title: 'Panes de Masa Madre', desc: 'Fermentación lenta y natural.', img: 'gallery2.png' },
+    { title: 'Pastelería Premium', desc: 'Dulces momentos artesanales.', img: 'gallery3.png' },
+    { title: 'Tradición y Aroma', desc: 'Recetas de la abuela.', img: 'gallery1.png' },
   ];
 
   const getGreeting = () => {
@@ -119,7 +119,7 @@ const Inicio = ({ setActiveTab, userRole }) => {
       {/* Hero Section (Abridged for Dashboard) */}
       <section 
         className="hero-section" 
-        style={{ backgroundImage: 'url("/hero.png")', height: '350px' }}
+        style={{ backgroundImage: 'url("hero.png")', height: '350px' }}
       >
         <div className="hero-overlay"></div>
         <div className="hero-content">

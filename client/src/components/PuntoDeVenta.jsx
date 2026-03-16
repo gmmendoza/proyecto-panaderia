@@ -20,14 +20,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MOCK_PRODUCTS = [
-  { id: 1, nombre: 'Pan de Masa Madre', precio: 1200, categoria: 'Panadería', unidad: 'unidad', img: '/prod_pan.png' },
-  { id: 2, nombre: 'Croissant Francés', precio: 850, categoria: 'Pastelería', unidad: 'unidad', img: '/prod_croissant.png' },
-  { id: 3, nombre: 'Hogaza Integral', precio: 1500, categoria: 'Panadería', unidad: 'unidad', img: '/prod_pan.png' },
-  { id: 4, nombre: 'Porción Torta Selva Negra', precio: 2200, categoria: 'Pastelería', unidad: 'porción', img: '/prod_cake.png' },
-  { id: 5, nombre: 'Café Espresso', precio: 950, categoria: 'Cafetería', unidad: 'taza', img: '/gallery3.png' },
-  { id: 6, nombre: 'Pan Casero por Peso', precio: 900, categoria: 'Panadería', unidad: 'kg', porPeso: true, img: '/prod_pan.png' },
-  { id: 7, nombre: 'Facturas Surtidas', precio: 450, categoria: 'Pastelería', unidad: 'unidad', img: '/prod_croissant.png' },
-  { id: 8, nombre: 'Budín de Limón', precio: 1800, categoria: 'Pastelería', unidad: 'unidad', img: '/prod_cake.png' },
+  { id: 1, nombre: 'Pan de Masa Madre', precio: 1200, categoria: 'Panadería', unidad: 'unidad', img: 'prod_pan.png' },
+  { id: 2, nombre: 'Croissant Francés', precio: 850, categoria: 'Pastelería', unidad: 'unidad', img: 'prod_croissant.png' },
+  { id: 3, nombre: 'Hogaza Integral', precio: 1500, categoria: 'Panadería', unidad: 'unidad', img: 'prod_pan.png' },
+  { id: 4, nombre: 'Porción Torta Selva Negra', precio: 2200, categoria: 'Pastelería', unidad: 'porción', img: 'prod_cake.png' },
+  { id: 5, nombre: 'Café Espresso', precio: 950, categoria: 'Cafetería', unidad: 'taza', img: 'gallery3.png' },
+  { id: 6, nombre: 'Pan Casero por Peso', precio: 900, categoria: 'Panadería', unidad: 'kg', porPeso: true, img: 'prod_pan.png' },
+  { id: 7, nombre: 'Facturas Surtidas', precio: 450, categoria: 'Pastelería', unidad: 'unidad', img: 'prod_croissant.png' },
+  { id: 8, nombre: 'Budín de Limón', precio: 1800, categoria: 'Pastelería', unidad: 'unidad', img: 'prod_cake.png' },
 ];
 
 const PuntoDeVenta = () => {

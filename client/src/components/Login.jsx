@@ -9,7 +9,7 @@ const Login = ({ setRole }) => {
       title: 'Ventas y Atención',
       desc: 'Accede al punto de venta y gestión de clientes.',
       icon: <ShoppingBag size={32} />,
-      img: '/role_ventas.png',
+      img: 'role_ventas.png',
       color: 'var(--primary)'
     },
     {
@@ -17,7 +17,7 @@ const Login = ({ setRole }) => {
       title: 'Producción y Horno',
       desc: 'Gestiona recetas, inventario y pedidos pendientes.',
       icon: <ChefHat size={32} />,
-      img: '/role_produccion.png',
+      img: 'role_produccion.png',
       color: '#D46A2A'
     },
     {
@@ -25,7 +25,7 @@ const Login = ({ setRole }) => {
       title: 'Panel de Control',
       desc: 'Administración total, estadísticas y finanzas.',
       icon: <ShieldCheck size={32} />,
-      img: '/role_admin.png',
+      img: 'role_admin.png',
       color: '#4A3728'
     }
   ];
