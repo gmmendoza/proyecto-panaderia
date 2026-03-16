@@ -115,7 +115,8 @@ h6 {
 
 /* Layout */
 .app-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: 260px 1fr;
   min-height: 100vh;
 }
 
@@ -190,8 +191,6 @@ h6 {
 }
 
 .sidebar {
-  width: 260px;
-  min-width: 260px;
   background-color: var(--bg-surface);
   border-right: 1px solid var(--border-light);
   display: flex;
@@ -201,6 +200,7 @@ h6 {
   top: 0;
   z-index: 1000;
   box-shadow: var(--shadow-sm);
+  overflow-y: auto;
 }
 
 .brand {
@@ -277,11 +277,9 @@ h6 {
 
 /* Main Content Area */
 .main-content {
-  flex: 1;
   padding: 2.5rem 3rem;
-  min-height: 100vh;
   background: var(--bg-app);
-  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Buttons */
@@ -410,17 +408,16 @@ h6 {
 
 /* Responsive Overrides */
 @media (max-width: 1024px) {
-  .sidebar {
-    width: 80px;
+  .app-container {
+    grid-template-columns: 80px 1fr;
   }
-  .brand-text, .nav-item span {
+  .sidebar-logo, .logo-text, .nav-link span, .user-info {
     display: none;
   }
-  .main-content {
-    margin-left: 80px;
-    padding: 3rem 1.5rem;
+  .sidebar {
+    align-items: center;
   }
-  .demo-banner {
-    left: 80px;
+  .main-content {
+    padding: 2rem 1.5rem;
   }
 }
