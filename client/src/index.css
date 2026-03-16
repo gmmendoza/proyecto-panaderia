@@ -191,15 +191,16 @@ h6 {
 
 .sidebar {
   width: 260px;
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-right: 1px solid var(--glass-border);
+  min-width: 260px;
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  position: fixed;
   height: 100vh;
+  position: sticky;
+  top: 0;
   z-index: 1000;
+  box-shadow: var(--shadow-sm);
 }
 
 .brand {
@@ -277,9 +278,10 @@ h6 {
 /* Main Content Area */
 .main-content {
   flex: 1;
-  margin-left: 260px; /* Width of fixed sidebar */
   padding: 2.5rem 3rem;
   min-height: 100vh;
+  background: var(--bg-app);
+  overflow-y: auto;
 }
 
 /* Buttons */
