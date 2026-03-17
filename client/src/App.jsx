@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Menu,
   X,
-  MessageCircle
+  MessageCircle,
+  ShoppingBag
 } from 'lucide-react';
 import ClientesList from './components/ClientesList';
 import TurnosList from './components/TurnosList';
@@ -22,6 +23,7 @@ import Recetario from './components/Recetario';
 import Estadisticas from './components/Estadisticas';
 import Inicio from './components/Inicio';
 import Login from './components/Login';
+import Pedidos from './components/Pedidos';
 
 function App() {
   const [activeTab, setActiveTab] = useState('inicio');
@@ -29,13 +31,14 @@ function App() {
   const [userRole, setUserRole] = useState(null);
 
   const navItems = [
+    { id: 'inicio', label: 'Dashboard', icon: Home, roles: ['admin', 'ventas', 'produccion'] },
     { id: 'pos', label: 'Punto de Venta', icon: Store, roles: ['admin', 'ventas'] },
-    { id: 'pos', label: 'Punto de Venta', icon: Store, roles: ['admin', 'ventas'] },
-    { id: 'clientes', label: 'Directorio Clientes', icon: UsersRound, roles: ['admin', 'ventas'] },
-    { id: 'turnos', label: 'Agenda & Turnos', icon: Calendar, roles: ['admin', 'ventas', 'produccion'] },
-    { id: 'inventario', label: 'Inventario & Stock', icon: Box, roles: ['admin', 'produccion'] },
-    { id: 'produccion', label: 'Recetario & Producción', icon: BookOpen, roles: ['admin', 'produccion'] },
-    { id: 'estadisticas', label: 'Estadísticas', icon: LineChart, roles: ['admin'] },
+    { id: 'pedidos', label: 'Pedidos', icon: ShoppingBag, roles: ['admin', 'ventas'] },
+    { id: 'clientes', label: 'Clientes', icon: UsersRound, roles: ['admin', 'ventas'] },
+    { id: 'turnos', label: 'Turnos', icon: Calendar, roles: ['admin', 'ventas', 'produccion'] },
+    { id: 'inventario', label: 'Stock', icon: Box, roles: ['admin', 'produccion'] },
+    { id: 'produccion', label: 'Producción', icon: BookOpen, roles: ['admin', 'produccion'] },
+    { id: 'estadisticas', label: 'Analytics', icon: LineChart, roles: ['admin'] },
   ];
 
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
@@ -60,10 +63,8 @@ function App() {
   if (!userRole) {
     return <Login setRole={(role) => {
       setUserRole(role);
-      // Set default tab based on role
-      if (role === 'admin') setActiveTab('estadisticas');
-      else if (role === 'ventas') setActiveTab('pos');
-      else if (role === 'produccion') setActiveTab('produccion');
+      // Everyone starts at Inicio
+      setActiveTab('inicio');
     }} />;
   }
 
@@ -134,7 +135,9 @@ function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
           >
+            {activeTab === 'inicio' && <Inicio setActiveTab={setActiveTab} userRole={userRole} />}
             {activeTab === 'pos' && <PuntoDeVenta />}
+            {activeTab === 'pedidos' && <Pedidos />}
             {activeTab === 'clientes' && <ClientesList />}
             {activeTab === 'turnos' && <TurnosList />}
             {activeTab === 'inventario' && <Inventario />}

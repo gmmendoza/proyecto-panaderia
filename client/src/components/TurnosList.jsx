@@ -13,10 +13,11 @@ import {
 import { api } from '../services/api';
 
 const MOCK_TURNOS = [
-  { id: 101, Cliente: { nombre: 'Carlos', apellido: 'Pérez' }, fechaHora: '2026-03-17T09:00:00', estado: 'Pendiente' },
-  { id: 102, Cliente: { nombre: 'Marta', apellido: 'Gómez' }, fechaHora: '2026-03-17T10:30:00', estado: 'Pendiente' },
-  { id: 103, Cliente: { nombre: 'Juan', apellido: 'Rodríguez' }, fechaHora: '2026-03-16T08:00:00', estado: 'Completado' },
-  { id: 104, Cliente: { nombre: 'Lucía', apellido: 'Fernández' }, fechaHora: '2026-03-18T11:00:00', estado: 'Pendiente' },
+  { id: 101, Cliente: { nombre: 'Carlos', apellido: 'Pérez' }, fechaHora: '2026-03-17T09:00:00', estado: 'Pendiente', nota: 'Recoger 2kg pan francés' },
+  { id: 102, Cliente: { nombre: 'Marta', apellido: 'Gómez' }, fechaHora: '2026-03-17T10:30:00', estado: 'Pendiente', nota: 'Pedido de facturas' },
+  { id: 103, Cliente: { nombre: 'Juan', apellido: 'Rodríguez' }, fechaHora: '2026-03-16T08:00:00', estado: 'Completado', nota: '' },
+  { id: 104, Cliente: { nombre: 'Lucía', apellido: 'Fernández' }, fechaHora: '2026-03-18T16:00:00', estado: 'Pendiente', nota: 'Torta de cumple' },
+  { id: 105, Cliente: { nombre: 'Roberto', apellido: 'Sosa' }, fechaHora: '2026-03-17T17:45:00', estado: 'Pendiente', nota: 'Catering evento' },
 ];
 
 export function TurnosList() {
@@ -25,6 +26,7 @@ export function TurnosList() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
     const [formData, setFormData] = useState({
         clienteId: '',
@@ -100,23 +102,41 @@ export function TurnosList() {
 
             <div className="bakery-card" style={{ padding: '0', overflow: 'hidden' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-app)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'white', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid var(--border-light)', width: '300px' }}>
-                    <Search size={18} color="var(--text-muted)" />
-                    <input 
-                      type="text" 
-                      placeholder="Buscar por cliente..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem' }}
-                    />
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'white', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid var(--border-light)', width: '300px' }}>
+                      <Search size={18} color="var(--text-muted)" />
+                      <input 
+                        type="text" 
+                        placeholder="Buscar por cliente o ID..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', background: 'white', borderRadius: '10px', border: '1px solid var(--border-light)', padding: '4px' }}>
+                      <button 
+                        onClick={() => setViewMode('list')}
+                        style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: viewMode === 'list' ? 'var(--primary)' : 'transparent', color: viewMode === 'list' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
+                      >
+                        Lista
+                      </button>
+                      <button 
+                        onClick={() => setViewMode('grid')}
+                        style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: viewMode === 'grid' ? 'var(--primary)' : 'transparent', color: viewMode === 'grid' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
+                      >
+                        Cuadrícula
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <div style={{ padding: '0.5rem 1rem', background: 'white', borderRadius: '10px', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                       <Filter size={14} color="var(--primary)" />
-                      <span>Pendientes: {turnos.filter(t => t.estado === 'Pendiente').length}</span>
+                      <span>Total: {turnos.length}</span>
                     </div>
                   </div>
                 </div>
+
+                {viewMode === 'list' ? (
 
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -209,6 +229,49 @@ export function TurnosList() {
                         </tbody>
                     </table>
                 </div>
+                ) : (
+                  <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', background: 'var(--bg-app)' }}>
+                    {filteredTurnos.map(turno => {
+                      const hour = new Date(turno.fechaHora).getHours();
+                      const shift = hour < 12 ? 'Mañana' : hour < 19 ? 'Tarde' : 'Noche';
+                      const isCompleted = turno.estado === 'Completado';
+                      
+                      return (
+                        <motion.div 
+                          key={turno.id}
+                          whileHover={{ scale: 1.02 }}
+                          className="bakery-card"
+                          style={{ padding: '1.5rem', background: 'white', position: 'relative', borderLeft: `4px solid ${isCompleted ? 'var(--success)' : 'var(--primary)'}` }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{shift} · {new Date(turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs</span>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button onClick={() => handleDelete(turno.id)} style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                            </div>
+                          </div>
+                          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 800 }}>{turno.Cliente?.nombre} {turno.Cliente?.apellido}</h4>
+                          <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{turno.nota || 'Sin observaciones'}</p>
+                          
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isCompleted ? 'var(--success)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {isCompleted ? <CheckCircle2 size={14} /> : <Timer size={14} />}
+                              {turno.estado}
+                            </span>
+                            {!isCompleted && (
+                              <button 
+                                onClick={() => handleStatusChange(turno.id, 'Completado')}
+                                className="btn btn-primary" 
+                                style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '8px' }}
+                              >
+                                ENTREGAR
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
             </div>
 
             {/* Modal */}

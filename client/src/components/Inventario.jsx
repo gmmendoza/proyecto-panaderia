@@ -8,17 +8,23 @@ import {
   Edit,
   TrendingDown,
   Box,
-  Truck
+  Truck,
+  MoreVertical,
+  ArrowUpDown,
+  Check,
+  X,
+  Layers,
+  ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 
 const MOCK_INVENTARIO = [
-  { id: 1, nombre: 'Harina 0000', categoria: 'Insumos', precio: 850, stock: 15, unidad: 'kg' },
-  { id: 2, nombre: 'Manteca Premium', categoria: 'Insumos', precio: 4200, stock: 8, unidad: 'kg' },
-  { id: 3, nombre: 'Croissant Tradicional', categoria: 'Panadería', precio: 1200, stock: 45, unidad: 'un' },
-  { id: 4, nombre: 'Pan de Masa Madre', categoria: 'Panadería', precio: 3500, stock: 12, unidad: 'un' },
-  { id: 5, nombre: 'Azúcar Blanca', categoria: 'Insumos', precio: 950, stock: 50, unidad: 'kg' },
+  { id: 1, nombre: 'Harina 0000', categoria: 'Insumos', precio: 850, stock: 15, stockMax: 100, unidad: 'kg' },
+  { id: 2, nombre: 'Manteca Premium', categoria: 'Insumos', precio: 4200, stock: 8, stockMax: 50, unidad: 'kg' },
+  { id: 3, nombre: 'Croissant Tradicional', categoria: 'Panadería', precio: 1200, stock: 45, stockMax: 200, unidad: 'un' },
+  { id: 4, nombre: 'Pan de Masa Madre', categoria: 'Panadería', precio: 3500, stock: 12, stockMax: 80, unidad: 'un' },
+  { id: 5, nombre: 'Azúcar Blanca', categoria: 'Insumos', precio: 950, stock: 50, stockMax: 150, unidad: 'kg' },
 ];
 
 const Inventario = () => {
@@ -26,6 +32,16 @@ const Inventario = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('Todos');
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newItem, setNewItem] = useState({
+    nombre: '',
+    categoria: 'Insumos',
+    precio: '',
+    stock: '',
+    unidad: 'kg'
+  });
 
   useEffect(() => {
     loadInventory();
@@ -35,12 +51,39 @@ const Inventario = () => {
     try {
       setLoading(true);
       const data = await api.productos.getAll().catch(() => MOCK_INVENTARIO);
-      setItems(data || MOCK_INVENTARIO);
+      const itemsWithMax = (data || MOCK_INVENTARIO).map(item => ({
+        ...item,
+        stockMax: item.stockMax || 100
+      }));
+      setItems(itemsWithMax);
     } catch (err) {
       setItems(MOCK_INVENTARIO);
     } finally {
       setLoading(false);
     }
+  };
+
+  const startEditing = (item) => {
+    setEditingId(item.id);
+    setEditValue(item.stock.toString());
+  };
+
+  const saveStock = (id) => {
+    const val = parseFloat(editValue);
+    if (!isNaN(val)) {
+      setItems(prev => prev.map(item => 
+        item.id === id ? { ...item, stock: val } : item
+      ));
+    }
+    setEditingId(null);
+  };
+
+  const handleAddItem = (e) => {
+    e.preventDefault();
+    const id = items.length + 1;
+    setItems([...items, { ...newItem, id, stock: parseFloat(newItem.stock), precio: parseFloat(newItem.precio), stockMax: 100 }]);
+    setShowAddModal(false);
+    setNewItem({ nombre: '', categoria: 'Insumos', precio: '', stock: '', unidad: 'kg' });
   };
 
   const filteredItems = items.filter(item => {
@@ -49,157 +92,271 @@ const Inventario = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const lowStockItems = items.filter(item => item.stock < 10);
+  const lowStockCount = items.filter(item => item.stock < (item.stockMax * 0.2)).length;
 
   return (
     <div className="fade-in">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
-          <h1 className="serif" style={{ fontSize: '2.5rem', margin: 0 }}>Control de Inventario</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Gestión centralizada de insumos y productos terminados.</p>
+          <h1 className="serif" style={{ fontSize: '3.5rem', margin: 0 }}>Inventario Maestro</h1>
+          <p className="page-subtitle" style={{ fontSize: '1.1rem', margin: '0.5rem 0 0 0' }}>Control absoluto de materias primas y productos terminados.</p>
         </div>
-        <button className="btn btn-primary">
-          <Plus size={18} /> AGREGAR ARTÍCULO
-        </button>
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowAddModal(true)}
+          className="btn btn-primary" 
+          style={{ height: '54px', padding: '0 32px', borderRadius: '18px', fontSize: '1rem', fontWeight: 800, boxShadow: '0 10px 30px rgba(253, 184, 19, 0.4)' }}
+        >
+          <Plus size={22} /> NUEVO PRODUCTO
+        </motion.button>
       </header>
 
       {/* Hero Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-        <div className="bakery-card" style={{ borderLeft: '4px solid var(--primary)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem', marginBottom: '3.5rem' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bakery-card glass" style={{ padding: '2.5rem', background: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>TOTAL ITEMS</p>
-              <div className="serif" style={{ fontSize: '2rem' }}>{items.length}</div>
+              <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Variedades</p>
+              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800 }}>{items.length}</div>
             </div>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Package size={20} />
+            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(253, 184, 19, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Layers size={32} />
             </div>
           </div>
-        </div>
-        <div className="bakery-card" style={{ borderLeft: '4px solid #ef4444' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bakery-card glass" style={{ padding: '2.5rem', background: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>BAJO STOCK</p>
-              <div className="serif" style={{ fontSize: '2rem', color: '#ef4444' }}>{lowStockItems.length}</div>
+              <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Reposición Urgente</p>
+              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800, color: '#E25E3E' }}>{lowStockCount}</div>
             </div>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TrendingDown size={20} />
+            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: '#FFF5F5', color: '#E25E3E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertTriangle size={32} />
             </div>
           </div>
-        </div>
-        <div className="bakery-card" style={{ borderLeft: '4px solid #10b981' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bakery-card glass" style={{ padding: '2.5rem', background: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>VALOR STOCK</p>
-              <div className="serif" style={{ fontSize: '2rem' }}>$1.2M</div>
+              <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Valor en Almacén</p>
+              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800, color: '#10b981' }}>$1.240.000</div>
             </div>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#d1fae5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Box size={20} />
+            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: '#F0FAF7', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShoppingBag size={32} />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="bakery-card" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', gap: '1rem', background: '#F9FAFB' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border-light)', flex: 1, maxWidth: '400px' }}>
-            <Search size={18} color="var(--text-muted)" />
+      <div className="bakery-card glass" style={{ padding: '0', overflow: 'hidden', background: 'white' }}>
+        <div style={{ padding: '2.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', gap: '2rem', alignItems: 'center', background: 'rgba(255,255,255,0.6)' }}>
+          <div className="pos-search-wrapper glass" style={{ flex: 1, maxWidth: '600px', height: '56px' }}>
+            <Search size={22} color="var(--text-muted)" />
             <input 
               type="text" 
-              placeholder="Buscar por nombre o ID..." 
+              placeholder="Escribe para buscar cualquier artículo..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem' }}
+              style={{ fontSize: '1.1rem' }}
             />
           </div>
-          <select 
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            style={{ padding: '0.5rem 1.5rem', borderRadius: '12px', border: '1px solid var(--border-light)', background: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}
-          >
-            <option value="Todos">Categorías</option>
-            <option value="Panadería">Panadería</option>
-            <option value="Insumos">Insumos</option>
-          </select>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {['Todos', 'Panadería', 'Insumos', 'Pastelería'].map(cat => (
+              <button 
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`nav-mode-btn ${filter === cat ? 'active' : ''}`}
+                style={{ height: '48px', padding: '0 20px' }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ textAlign: 'left', background: '#F3F4F6' }}>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ARTÍCULO</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>CATEGORÍA</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>PRECIO</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>STOCK ACTUAL</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ESTADO</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>ACCIONES</th>
+              <tr style={{ textAlign: 'left', background: 'var(--bg-app)' }}>
+                <th style={{ padding: '1.5rem 2.5rem', fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Descripción del Artículo</th>
+                <th style={{ padding: '1.5rem 2.5rem', fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Categoría</th>
+                <th style={{ padding: '1.5rem 2.5rem', fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Precio Base</th>
+                <th style={{ padding: '1.5rem 2.5rem', fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Stock Actual</th>
+                <th style={{ padding: '1.5rem 2.5rem', fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Gestión</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Sincronizando inventario...</td></tr>
-              ) : filteredItems.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)', verticalAlign: 'middle' }}>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ fontWeight: 700 }}>{item.nombre}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SKU: {item.id.toString().padStart(6, '0')}</div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', background: '#F3F4F6', padding: '4px 10px', borderRadius: '8px' }}>{item.categoria}</span>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ fontWeight: 700 }}>${item.precio.toLocaleString()}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>x {item.unidad}</div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{item.stock}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.unidad}</div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    {item.stock < 10 ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#dc2626', background: '#fef2f2', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800 }}>
-                        <AlertTriangle size={12} /> CRÍTICO
-                      </span>
-                    ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#059669', background: '#ecfdf5', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800 }}>
-                        OPTIMO
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button className="row-btn"><Edit size={16} /></button>
-                      <button className="row-btn" style={{ color: '#ef4444' }}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                <tr><td colSpan="5" style={{ padding: '8rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '1.2rem' }}>Cargando registros...</td></tr>
+              ) : filteredItems.map((item) => {
+                const stockPercent = (item.stock / item.stockMax) * 100;
+                const isLow = item.stock < (item.stockMax * 0.25);
+                
+                return (
+                  <tr key={item.id} className="stock-row" style={{ borderBottom: '1px solid var(--border-light)', transition: 'background 0.2s' }}>
+                    <td style={{ padding: '2rem 2.5rem' }}>
+                      <div style={{ fontWeight: 800, fontSize: '1.15rem', color: 'var(--text-main)', marginBottom: '4px' }}>{item.nombre}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, opacity: 0.6 }}>SKU: ART-{item.id.toString().padStart(4, '0')}</div>
+                    </td>
+                    <td style={{ padding: '2rem 2.5rem' }}>
+                      <span className="category-pill" style={{ background: item.categoria === 'Insumos' ? '#F3F4F6' : '#FDFAF5', color: item.categoria === 'Insumos' ? '#6B7280' : 'var(--primary)', border: 'none' }}>{item.categoria}</span>
+                    </td>
+                    <td style={{ padding: '2rem 2.5rem' }}>
+                      <div className="serif" style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '1.4rem' }}>${item.precio.toLocaleString()}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>por {item.unidad}</div>
+                    </td>
+                    <td style={{ padding: '2rem 2.5rem' }}>
+                      {editingId === item.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <input 
+                            autoFocus
+                            type="number" 
+                            className="stock-edit-input"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={() => saveStock(item.id)}
+                            onKeyDown={(e) => e.key === 'Enter' && saveStock(item.id)}
+                            style={{ border: '2px solid var(--primary)', borderRadius: '12px' }}
+                          />
+                        </div>
+                      ) : (
+                        <div 
+                          style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}
+                          onClick={() => startEditing(item)}
+                        >
+                          <div style={{ fontWeight: 900, fontSize: '1.8rem', color: isLow ? '#E25E3E' : 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            {item.stock}
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 700 }}>{item.unidad}</span>
+                          </div>
+                          <div style={{ marginLeft: 'auto', width: '80px' }}>
+                             <div style={{ height: '8px', background: '#F1F1F1', borderRadius: '10px', overflow: 'hidden' }}>
+                               <div style={{ width: `${Math.min(stockPercent, 100)}%`, height: '100%', background: isLow ? '#E25E3E' : (stockPercent < 50 ? '#FDB813' : '#10b981'), borderRadius: '10px' }} />
+                             </div>
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '2rem 2.5rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                        <button className="action-row-btn glass" style={{ border: '1px solid var(--border-light)' }}><Edit size={18} /></button>
+                        <button className="action-row-btn glass" style={{ border: '1px solid #FEE2E2', color: '#E25E3E' }}><Trash2 size={18} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div style={{ marginTop: '2rem', display: 'flex', gap: '1.5rem' }}>
-        <div className="bakery-card" style={{ flex: 1, border: '2px dashed var(--border-light)', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem', background: 'transparent' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-            <Truck size={24} />
+      {/* Add Product Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(61,44,30,0.4)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bakery-card glass" 
+              style={{ width: '100%', maxWidth: '600px', padding: '3rem', background: 'white' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
+                <h2 className="serif" style={{ fontSize: '2.2rem' }}>Nuevo Artículo</h2>
+                <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={28} /></button>
+              </div>
+
+              <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Nombre del Producto / Insumo</label>
+                  <input 
+                    required
+                    type="text" 
+                    placeholder="Ej. Harina de Trigo 000"
+                    value={newItem.nombre}
+                    onChange={(e) => setNewItem({...newItem, nombre: e.target.value})}
+                    style={{ width: '100%', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--border-light)', background: 'var(--bg-app)', fontSize: '1rem', fontWeight: 600 }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Categoría</label>
+                    <select 
+                      value={newItem.categoria}
+                      onChange={(e) => setNewItem({...newItem, categoria: e.target.value})}
+                      style={{ width: '100%', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--border-light)', background: 'var(--bg-app)', fontSize: '1rem', fontWeight: 600 }}
+                    >
+                      <option value="Insumos">Insumos</option>
+                      <option value="Panadería">Panadería</option>
+                      <option value="Pastelería">Pastelería</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Unidad</label>
+                    <select 
+                      value={newItem.unidad}
+                      onChange={(e) => setNewItem({...newItem, unidad: e.target.value})}
+                      style={{ width: '100%', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--border-light)', background: 'var(--bg-app)', fontSize: '1rem', fontWeight: 600 }}
+                    >
+                      <option value="kg">Kilogramos (kg)</option>
+                      <option value="un">Unidades (un)</option>
+                      <option value="lt">Litros (lt)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Precio Base ($)</label>
+                    <input 
+                      required
+                      type="number" 
+                      placeholder="0.00"
+                      value={newItem.precio}
+                      onChange={(e) => setNewItem({...newItem, precio: e.target.value})}
+                      style={{ width: '100%', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--border-light)', background: 'var(--bg-app)', fontSize: '1rem', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>Stock Inicial</label>
+                    <input 
+                      required
+                      type="number" 
+                      placeholder="0"
+                      value={newItem.stock}
+                      onChange={(e) => setNewItem({...newItem, stock: e.target.value})}
+                      style={{ width: '100%', padding: '1.25rem', borderRadius: '14px', border: '1px solid var(--border-light)', background: 'var(--bg-app)', fontSize: '1rem', fontWeight: 600 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem' }}>
+                  <button type="button" onClick={() => setShowAddModal(false)} className="btn btn-secondary" style={{ flex: 1, height: '56px' }}>CANCELAR</button>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '56px' }}>GUARDAR ARTÍCULO</button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-          <div>
-            <h4 style={{ margin: 0 }}>Pedidos a Proveedores</h4>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Gestiona órdenes de compra automáticas según el stock.</p>
-          </div>
-          <button className="btn btn-secondary" style={{ marginLeft: 'auto' }}>GESTIONAR</button>
-        </div>
-      </div>
+        )}
+      </AnimatePresence>
 
       <style>{`
-        .row-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          border: 1px solid var(--border-light);
+        .stock-row:hover {
+          background: #FDFAF5;
+        }
+        .category-pill {
+          font-size: 0.85rem;
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+        }
+        .action-row-btn {
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
           background: white;
           color: var(--text-main);
           display: flex;
@@ -208,10 +365,34 @@ const Inventario = () => {
           cursor: pointer;
           transition: all 0.2s;
         }
-        .row-btn:hover {
-          background: #f9fafb;
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-sm);
+        .action-row-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+          background: var(--text-main);
+          color: white;
+        }
+        .stock-edit-input {
+          width: 100px;
+          padding: 8px 12px;
+          font-size: 1.5rem;
+          font-weight: 900;
+          text-align: center;
+          outline: none;
+        }
+        .nav-mode-btn {
+          border: none;
+          background: transparent;
+          padding: 10px 24px;
+          border-radius: 12px;
+          font-size: 0.95rem;
+          font-weight: 800;
+          cursor: pointer;
+          color: var(--text-muted);
+          transition: all 0.3s;
+        }
+        .nav-mode-btn.active {
+          background: var(--text-main);
+          color: white;
         }
       `}</style>
     </div>
@@ -219,3 +400,4 @@ const Inventario = () => {
 };
 
 export default Inventario;
+
