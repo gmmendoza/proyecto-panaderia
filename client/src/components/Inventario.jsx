@@ -35,6 +35,7 @@ const Inventario = () => {
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [toast, setToast] = useState(null);
   const [newItem, setNewItem] = useState({
     nombre: '',
     categoria: 'Insumos',
@@ -47,17 +48,19 @@ const Inventario = () => {
     loadInventory();
   }, []);
 
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const loadInventory = async () => {
     try {
       setLoading(true);
-      const data = await api.productos.getAll().catch(() => MOCK_INVENTARIO);
-      const itemsWithMax = (data || MOCK_INVENTARIO).map(item => ({
-        ...item,
-        stockMax: item.stockMax || 100
-      }));
-      setItems(itemsWithMax);
+      const data = await api.productos.getAll();
+      setItems(data);
     } catch (err) {
-      setItems(MOCK_INVENTARIO);
+      console.error(err);
+      showToast('Error al cargar inventario', 'error');
     } finally {
       setLoading(false);
     }
@@ -68,22 +71,49 @@ const Inventario = () => {
     setEditValue(item.stock.toString());
   };
 
-  const saveStock = (id) => {
+  const saveStock = async (id) => {
     const val = parseFloat(editValue);
     if (!isNaN(val)) {
-      setItems(prev => prev.map(item => 
-        item.id === id ? { ...item, stock: val } : item
-      ));
+      try {
+        await api.productos.update(id, { stock: val });
+        setItems(prev => prev.map(item => 
+          item.id === id ? { ...item, stock: val } : item
+        ));
+        showToast('Stock actualizado');
+      } catch (err) {
+        showToast('Error al actualizar stock', 'error');
+      }
     }
     setEditingId(null);
   };
 
-  const handleAddItem = (e) => {
+  const handleAddItem = async (e) => {
     e.preventDefault();
-    const id = items.length + 1;
-    setItems([...items, { ...newItem, id, stock: parseFloat(newItem.stock), precio: parseFloat(newItem.precio), stockMax: 100 }]);
-    setShowAddModal(false);
-    setNewItem({ nombre: '', categoria: 'Insumos', precio: '', stock: '', unidad: 'kg' });
+    try {
+      const resp = await api.productos.create({
+        ...newItem,
+        precio: parseFloat(newItem.precio),
+        stock: parseFloat(newItem.stock)
+      });
+      setItems([resp, ...items]);
+      setShowAddModal(false);
+      setNewItem({ nombre: '', categoria: 'Insumos', precio: '', stock: '', unidad: 'kg' });
+      showToast('Producto agregado correctamente');
+    } catch (err) {
+      showToast('Error al agregar producto', 'error');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Estás seguro de eliminar este artículo?')) {
+      try {
+        await api.productos.delete(id);
+        setItems(items.filter(item => item.id !== id));
+        showToast('Artículo eliminado');
+      } catch (err) {
+        showToast('Error al eliminar', 'error');
+      }
+    }
   };
 
   const filteredItems = items.filter(item => {
@@ -92,7 +122,7 @@ const Inventario = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const lowStockCount = items.filter(item => item.stock < (item.stockMax * 0.2)).length;
+  const lowStockCount = items.filter(item => item.stock < ((item.stockMax || 100) * 0.2)).length;
 
   return (
     <div className="fade-in">
@@ -149,7 +179,32 @@ const Inventario = () => {
         </motion.div>
       </div>
 
-      <div className="bakery-card glass" style={{ padding: '0', overflow: 'hidden', background: 'white' }}>
+      <div className="bakery-card glass" style={{ padding: '0', overflow: 'hidden', background: 'white', position: 'relative' }}>
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20, x: '-50%' }}
+              animate={{ opacity: 1, y: 10, x: '-50%' }}
+              exit={{ opacity: 0, y: -20, x: '-50%' }}
+              style={{
+                position: 'fixed',
+                top: '20px',
+                left: '50%',
+                zIndex: 2000,
+                padding: '12px 24px',
+                borderRadius: '12px',
+                background: toast.type === 'success' ? '#10b981' : '#E25E3E',
+                color: 'white',
+                fontWeight: 800,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+              }}
+            >
+              {toast.msg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div style={{ padding: '2.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', gap: '2rem', alignItems: 'center', background: 'rgba(255,255,255,0.6)' }}>
           <div className="pos-search-wrapper glass" style={{ flex: 1, maxWidth: '600px', height: '56px' }}>
             <Search size={22} color="var(--text-muted)" />
@@ -190,8 +245,8 @@ const Inventario = () => {
               {loading ? (
                 <tr><td colSpan="5" style={{ padding: '8rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '1.2rem' }}>Cargando registros...</td></tr>
               ) : filteredItems.map((item) => {
-                const stockPercent = (item.stock / item.stockMax) * 100;
-                const isLow = item.stock < (item.stockMax * 0.25);
+                const stockPercent = (item.stock / (item.stockMax || 100)) * 100;
+                const isLow = item.stock < ((item.stockMax || 100) * 0.25);
                 
                 return (
                   <tr key={item.id} className="stock-row" style={{ borderBottom: '1px solid var(--border-light)', transition: 'background 0.2s' }}>
@@ -240,7 +295,13 @@ const Inventario = () => {
                     <td style={{ padding: '2rem 2.5rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                         <button className="action-row-btn glass" style={{ border: '1px solid var(--border-light)' }}><Edit size={18} /></button>
-                        <button className="action-row-btn glass" style={{ border: '1px solid #FEE2E2', color: '#E25E3E' }}><Trash2 size={18} /></button>
+                        <button 
+                          onClick={() => handleDelete(item.id)}
+                          className="action-row-btn glass" 
+                          style={{ border: '1px solid #FEE2E2', color: '#E25E3E' }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>

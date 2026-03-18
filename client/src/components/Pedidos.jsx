@@ -53,8 +53,11 @@ const MOCK_PEDIDOS = [
   }
 ];
 
+import { api } from '../services/api';
+
 const Pedidos = () => {
-  const [pedidos, setPedidos] = useState(MOCK_PEDIDOS);
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPedido, setNewPedido] = useState({
@@ -68,26 +71,62 @@ const Pedidos = () => {
     prioridad: 'Media'
   });
 
-  const handleAddPedido = (e) => {
+  useEffect(() => {
+    loadPedidos();
+  }, []);
+
+  const loadPedidos = async () => {
+    try {
+      setLoading(true);
+      const data = await api.pedidos.getAll();
+      setPedidos(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddPedido = async (e) => {
     e.preventDefault();
-    const id = `PED-${String(pedidos.length + 1).padStart(3, '0')}`;
-    setPedidos([{ ...newPedido, id }, ...pedidos]);
-    setShowAddModal(false);
-    setNewPedido({ cliente: '', items: '', total: '', sena: '', fechaEntrega: '', horaEntrega: '', estado: 'Pendiente', prioridad: 'Media' });
+    try {
+      const resp = await api.pedidos.create({
+        ...newPedido,
+        total: parseFloat(newPedido.total),
+        sena: parseFloat(newPedido.sena)
+      });
+      setPedidos([resp, ...pedidos]);
+      setShowAddModal(false);
+      setNewPedido({ cliente: '', items: '', total: '', sena: '', fechaEntrega: '', horaEntrega: '', estado: 'Pendiente', prioridad: 'Media' });
+    } catch (err) {
+      alert('Error al registrar pedido');
+    }
   };
 
-  const deletePedido = (id) => {
-    setPedidos(pedidos.filter(p => p.id !== id));
+  const deletePedido = async (id) => {
+    if (window.confirm('¿Eliminar este pedido?')) {
+      try {
+        await api.pedidos.delete(id);
+        setPedidos(pedidos.filter(p => p.id !== id));
+      } catch (err) {
+        alert('Error al eliminar');
+      }
+    }
   };
 
-  const updateEstado = (id, nuevoEstado) => {
-    setPedidos(pedidos.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));
+  const updateEstado = async (id, nuevoEstado) => {
+    try {
+      await api.pedidos.update(id, { estado: nuevoEstado });
+      setPedidos(pedidos.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));
+    } catch (err) {
+      alert('Error al actualizar estado');
+    }
   };
 
   const filteredPedidos = pedidos.filter(p => 
     p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.items.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.items && p.items.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    p.id.toString().includes(searchTerm)
   );
 
   const getStatusColor = (status) => {
@@ -218,6 +257,7 @@ const Pedidos = () => {
                 <option value="Pendiente">Pendiente</option>
                 <option value="Procesando">En Producción</option>
                 <option value="Listo para Retiro">Listo para Retiro</option>
+                <option value="Entregado">Entregado / Finalizado</option>
                 <option value="Cancelado">Cancelado</option>
               </select>
 

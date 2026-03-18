@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ChefHat, ShieldCheck, User, ArrowLeft, Key } from 'lucide-react';
+import { ShoppingBag, ChefHat, ShieldCheck, User, ArrowLeft, Key, ChevronRight, Zap } from 'lucide-react';
+import { api } from '../services/api';
 
 const Login = ({ setRole }) => {
   const [selectedRole, setSelectedRole] = useState(null);
+  const demoActive = api.demo.isActive();
 
   const roles = [
     {
@@ -111,10 +113,17 @@ const Login = ({ setRole }) => {
         style={{ textAlign: 'center', marginBottom: '4rem' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <div className="logo-icon glass" style={{ width: '80px', height: '80px', fontSize: '2.5rem', background: 'var(--primary)', boxShadow: '0 20px 40px rgba(253, 184, 19, 0.3)' }}>🥨</div>
-          <h1 className="serif" style={{ fontSize: '4.5rem', margin: 0, background: 'linear-gradient(135deg, #3D2C1E 0%, #8C7A6B 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>El Aromo</h1>
+          <motion.div 
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+            className="logo-box glass" 
+            style={{ width: '100px', height: '100px', fontSize: '3rem', background: 'var(--primary)', boxShadow: '0 20px 40px var(--primary-glow)' }}
+          >
+            🥨
+          </motion.div>
+          <h1 className="page-title" style={{ fontSize: '5rem', margin: 0 }}>El Aromo</h1>
         </div>
-        <p className="serif" style={{ color: 'var(--text-muted)', fontSize: '1.4rem', fontStyle: 'italic' }}>Artesanos del Pan • Maestros del Sabor</p>
+        <p className="serif" style={{ color: 'var(--text-muted)', fontSize: '1.5rem', fontStyle: 'italic', letterSpacing: '1px' }}>Artesanos del Pan • Maestros del Sabor</p>
       </motion.div>
 
       <div style={{ 
@@ -132,7 +141,7 @@ const Login = ({ setRole }) => {
             transition={{ delay: i * 0.15 }}
             whileHover={{ y: -15 }}
             onClick={() => setSelectedRole(role.id)}
-            className="bakery-card glass"
+            className="bakery-card glass fade-in"
             style={{ 
               cursor: 'pointer', 
               padding: 0, 
@@ -141,7 +150,8 @@ const Login = ({ setRole }) => {
               border: '1px solid var(--border-light)',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.05)'
+              boxShadow: '0 20px 50px rgba(61, 44, 30, 0.05)',
+              position: 'relative'
             }}
           >
             <div style={{ 
@@ -171,8 +181,33 @@ const Login = ({ setRole }) => {
         ))}
       </div>
       
-      <p style={{ marginTop: '5rem', color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
-        © {new Date().getFullYear()} EL AROMO BAKERY · CORPORATE SYSTEM V2.4
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+        onClick={() => demoActive ? api.demo.disable() : api.demo.enable()}
+        style={{
+          marginTop: '3rem',
+          padding: '12px 24px',
+          borderRadius: '12px',
+          border: demoActive ? '2px solid var(--primary)' : '1px solid var(--border-light)',
+          background: demoActive ? 'rgba(253, 184, 19, 0.1)' : 'white',
+          color: demoActive ? 'var(--primary)' : 'var(--text-muted)',
+          fontSize: '0.85rem',
+          fontWeight: 800,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          boxShadow: '0 10px 20px rgba(0,0,0,0.05)'
+        }}
+      >
+        <Zap size={16} fill={demoActive ? 'var(--primary)' : 'none'} />
+        {demoActive ? 'SALIENDO DE MODO DEMO...' : '👉 PROBAR DEMO (DATOS DE EJEMPLO)'}
+      </motion.button>
+      
+      <p style={{ marginTop: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+        © {new Date().getFullYear()} EL AROMO BAKERY · CORPORATE SYSTEM V2.5
       </p>
     </div>
   );

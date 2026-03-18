@@ -31,20 +31,20 @@ export function TurnosList() {
     const [formData, setFormData] = useState({
         clienteId: '',
         fechaHora: '',
-        estado: 'Pendiente'
+        estado: 'reservado'
     });
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const [turnosData, clientesData] = await Promise.all([
-                api.turnos.getAll().catch(() => MOCK_TURNOS),
-                api.clientes.getAll().catch(() => [])
+                api.turnos.getAll(),
+                api.clientes.getAll()
             ]);
             setTurnos(turnosData);
             setClientes(clientesData);
         } catch (err) {
-            setTurnos(MOCK_TURNOS);
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -60,27 +60,33 @@ export function TurnosList() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Mock behavior for demo
-            const newTurno = {
-              id: Math.floor(Math.random() * 1000),
-              Cliente: { nombre: 'Nuevo', apellido: 'Cliente' },
-              fechaHora: formData.fechaHora,
-              estado: 'Pendiente'
-            };
-            setTurnos([newTurno, ...turnos]);
+            const resp = await api.turnos.create(formData);
+            setTurnos([resp, ...turnos]);
             setIsModalOpen(false);
-            setFormData({ clienteId: '', fechaHora: '', estado: 'Pendiente' });
+            setFormData({ clienteId: '', fechaHora: '', estado: 'reservado' });
         } catch (err) {
             alert('Error al crear registro');
         }
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        setTurnos(prev => prev.map(t => t.id === id ? { ...t, estado: newStatus } : t));
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            await api.turnos.update(id, { estado: newStatus });
+            setTurnos(prev => prev.map(t => t.id === id ? { ...t, estado: newStatus } : t));
+        } catch (err) {
+            alert('Error al actualizar');
+        }
     };
 
-    const handleDelete = (id) => {
-        setTurnos(prev => prev.filter(t => t.id !== id));
+    const handleDelete = async (id) => {
+        if (window.confirm('¿Eliminar este registro?')) {
+            try {
+                await api.turnos.delete(id);
+                setTurnos(prev => prev.filter(t => t.id !== id));
+            } catch (err) {
+                alert('Error al eliminar');
+            }
+        }
     };
 
     const filteredTurnos = turnos.filter(t => 

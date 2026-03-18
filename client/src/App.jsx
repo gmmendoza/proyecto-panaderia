@@ -80,11 +80,11 @@ function App() {
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo">
-          <div className="logo-icon">
-            <Store size={22} color="white" />
+        <div className="logo-container">
+          <div className="logo-box">
+            <Store size={24} />
           </div>
-          <div className="logo-text">
+          <div className="logo-info">
             <h2>El Aromo</h2>
             <span>BAKERY SYSTEM</span>
           </div>

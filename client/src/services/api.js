@@ -1,19 +1,12 @@
-// detect if we should use mock data (e.g. running from file:// or on a static host like GitHub Pages)
-const isMock = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? (window.location.pathname.includes('demo') ? true : false) 
-    : true;
+// detect if we should use mock data 
+const isMock = localStorage.getItem('bakery_demo_mode') === 'true' || 
+               (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 
 const initialClientes = [
     { id: 1, nombre: 'Guadalupe', apellido: 'Mendoza', telefono: '3764-123456', saldo: 0 },
     { id: 2, nombre: 'Ana', apellido: 'García', telefono: '3764-987654', saldo: 1500.50 },
     { id: 3, nombre: 'Juan', apellido: 'Pérez', telefono: '3764-000001', saldo: -500.00 },
     { id: 4, nombre: 'Roberto', apellido: 'Sánchez', telefono: '3764-555666', saldo: 240.00 },
-    { id: 5, nombre: 'Marta', apellido: 'Rodríguez', telefono: '3764-111222', saldo: 0 },
-    { id: 6, nombre: 'Carlos', apellido: 'Gómez', telefono: '3764-333444', saldo: 4500.00 },
-    { id: 7, nombre: 'Lucía', apellido: 'López', telefono: '3764-777888', saldo: -120.50 },
-    { id: 8, nombre: 'Fernando', apellido: 'Torres', telefono: '3764-999000', saldo: 0 },
-    { id: 9, nombre: 'Elena', apellido: 'Díaz', telefono: '3764-222333', saldo: 890.00 },
-    { id: 10, nombre: 'Ricardo', apellido: 'Vázquez', telefono: '3764-444555', saldo: 0 }
 ];
 
 const initialTurnos = [
@@ -23,30 +16,22 @@ const initialTurnos = [
         fechaHora: new Date(Date.now() + 86400000).toISOString(),
         estado: 'Pendiente',
         Cliente: { id: 1, nombre: 'Guadalupe', apellido: 'Mendoza' }
-    },
-    { 
-        id: 2, 
-        clienteId: 2, 
-        fechaHora: new Date(Date.now() - 3600000).toISOString(),
-        estado: 'Completado',
-        Cliente: { id: 2, nombre: 'Ana', apellido: 'García' }
     }
 ];
 
 const initialProductos = [
-    { id: 1, nombre: 'Pan Francés', precio: 1200, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 45 },
-    { id: 2, nombre: 'Pan de Masa Madre', precio: 2800, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 12 },
-    { id: 3, nombre: 'Baguette', precio: 950, unidad: 'u', categoria: 'Panadería', porPeso: false, stock: 30 },
-    { id: 4, nombre: 'Pan de Campo', precio: 1500, unidad: 'u', categoria: 'Panadería', porPeso: false, stock: 15 },
-    { id: 5, nombre: 'Medialunas', precio: 450, unidad: 'u', categoria: 'Pastelería', porPeso: false, stock: 120 },
-    { id: 6, nombre: 'Tarta de Fresa', precio: 8500, unidad: 'u', categoria: 'Pastelería', porPeso: false, stock: 8 },
-    { id: 7, nombre: 'Café Expresso', precio: 1200, unidad: 'u', categoria: 'Cafetería', porPeso: false, stock: 999 },
-    { id: 8, nombre: 'Sándwich de Miga', precio: 800, unidad: 'u', categoria: 'Salados', porPeso: false, stock: 50 }
+    { id: 1, nombre: 'Pan Francés', precio: 1200, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 45, stockMax: 100 },
+    { id: 2, nombre: 'Pan de Masa Madre', precio: 2800, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 12, stockMax: 80 },
+    { id: 3, nombre: 'Baguette', precio: 950, unidad: 'u', categoria: 'Panadería', porPeso: false, stock: 30, stockMax: 100 },
+    { id: 4, nombre: 'Croissant Premium', precio: 1500, unidad: 'u', categoria: 'Pastelería', porPeso: false, stock: 120, stockMax: 200 },
 ];
 
 const initialVentas = [
-    { id: 1, fecha: new Date().toISOString(), cliente: 'Consumidor Final', total: 4500, items: 3 },
-    { id: 2, fecha: new Date(Date.now() - 86400000).toISOString(), cliente: 'Ana García', total: 2800, items: 1 }
+    { id: 1, createdAt: new Date().toISOString(), total: 4500, metodoPago: 'Efectivo', items: [{ nombre: 'Pan Francés', qty: 2, total: 2400 }] },
+];
+
+const initialPedidos = [
+    { id: 1, clienteNombre: 'Marta R.', descripcion: 'Torta de Cumpleaños', fechaEntrega: new Date(Date.now() + 172800000).toISOString(), total: 15000, sena: 5000, saldo: 10000, estado: 'Recibido' }
 ];
 
 const getStorage = (key, initial) => {
@@ -58,13 +43,47 @@ const getStorage = (key, initial) => {
     return JSON.parse(data);
 };
 
+const initialRecetas = [
+    { 
+        id: 1, 
+        nombre: 'Pan Francés Tradicional', 
+        categoria: 'Panes', 
+        tiempo: '4h', 
+        ingredientes: [
+            { nombre: 'Harina 000', base: 1000, unidad: 'g' },
+            { nombre: 'Agua', base: 650, unidad: 'ml' },
+            { nombre: 'Sal', base: 20, unidad: 'g' },
+            { nombre: 'Levadura Fresca', base: 25, unidad: 'g' }
+        ],
+        pasos: [
+            'Amasado inicial (15 min) hasta lograr elasticidad.',
+            'Primera fermentación en bloque (2h).',
+            'División y preformado.',
+            'Descanso y formado final.',
+            'Segunda fermentación (1.5h).',
+            'Horneado a 220°C.'
+        ],
+        img: 'gallery2.png',
+        favorito: true,
+        descripcion: 'Corteza crujiente y miga aireada.'
+    }
+];
+
 export const api = {
+    demo: {
+        enable: () => {
+            localStorage.setItem('bakery_demo_mode', 'true');
+            window.location.reload();
+        },
+        disable: () => {
+            localStorage.setItem('bakery_demo_mode', 'false');
+            window.location.reload();
+        },
+        isActive: () => isMock
+    },
     clientes: {
         getAll: async () => {
-            if (isMock) {
-                // Return a copy to avoid mutating initial storage directly in-memory
-                return getStorage('bakery_clientes', initialClientes);
-            }
+            if (isMock) return getStorage('bakery_clientes', initialClientes);
             const res = await fetch('/api/clientes');
             return res.json();
         },
@@ -72,8 +91,7 @@ export const api = {
             if (isMock) {
                 const list = getStorage('bakery_clientes', initialClientes);
                 const newItem = { ...data, id: Date.now() };
-                const newList = [newItem, ...list];
-                localStorage.setItem('bakery_clientes', JSON.stringify(newList));
+                localStorage.setItem('bakery_clientes', JSON.stringify([newItem, ...list]));
                 return newItem;
             }
             const res = await fetch('/api/clientes', {
@@ -82,14 +100,158 @@ export const api = {
                 body: JSON.stringify(data)
             });
             return res.json();
+        }
+    },
+    productos: {
+        getAll: async () => {
+            if (isMock) return getStorage('bakery_productos', initialProductos);
+            const res = await fetch('/api/productos');
+            return res.json();
+        },
+        create: async (data) => {
+            if (isMock) {
+                const list = getStorage('bakery_productos', initialProductos);
+                const newItem = { ...data, id: Date.now() };
+                localStorage.setItem('bakery_productos', JSON.stringify([newItem, ...list]));
+                return newItem;
+            }
+            const res = await fetch('/api/productos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        },
+        update: async (id, data) => {
+            if (isMock) {
+                const list = getStorage('bakery_productos', initialProductos);
+                const newList = list.map(p => p.id === id ? { ...p, ...data } : p);
+                localStorage.setItem('bakery_productos', JSON.stringify(newList));
+                return data;
+            }
+            const res = await fetch(`/api/productos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
         },
         delete: async (id) => {
             if (isMock) {
-                const list = getStorage('bakery_clientes', initialClientes);
-                localStorage.setItem('bakery_clientes', JSON.stringify(list.filter(c => c.id !== id)));
+                const list = getStorage('bakery_productos', initialProductos);
+                localStorage.setItem('bakery_productos', JSON.stringify(list.filter(p => p.id !== id)));
                 return true;
             }
-            await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
+            await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+            return true;
+        }
+    },
+    ventas: {
+        getAll: async () => {
+            if (isMock) return getStorage('bakery_ventas', initialVentas);
+            const res = await fetch('/api/ventas');
+            return res.json();
+        },
+        create: async (data) => {
+            if (isMock) {
+                const list = getStorage('bakery_ventas', initialVentas);
+                const newItem = { ...data, id: Date.now(), createdAt: new Date().toISOString() };
+                localStorage.setItem('bakery_ventas', JSON.stringify([newItem, ...list]));
+                return newItem;
+            }
+            const res = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        }
+    },
+    pedidos: {
+        getAll: async () => {
+            if (isMock) return getStorage('bakery_pedidos', initialPedidos);
+            const res = await fetch('/api/pedidos');
+            return res.json();
+        },
+        create: async (data) => {
+            if (isMock) {
+                const list = getStorage('bakery_pedidos', initialPedidos);
+                const newItem = { ...data, id: Date.now(), saldo: (data.total || 0) - (data.sena || 0) };
+                localStorage.setItem('bakery_pedidos', JSON.stringify([newItem, ...list]));
+                return newItem;
+            }
+            const res = await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        },
+        update: async (id, data) => {
+            if (isMock) {
+                const list = getStorage('bakery_pedidos', initialPedidos);
+                const newList = list.map(p => p.id === id ? { ...p, ...data, saldo: (data.total || p.total) - (data.sena || p.sena) } : p);
+                localStorage.setItem('bakery_pedidos', JSON.stringify(newList));
+                return data;
+            }
+            const res = await fetch(`/api/pedidos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        },
+        delete: async (id) => {
+            if (isMock) {
+                const list = getStorage('bakery_pedidos', initialPedidos);
+                localStorage.setItem('bakery_pedidos', JSON.stringify(list.filter(p => p.id !== id)));
+                return true;
+            }
+            await fetch(`/api/pedidos/${id}`, { method: 'DELETE' });
+            return true;
+        }
+    },
+    recetas: {
+        getAll: async () => {
+            if (isMock) return getStorage('bakery_recetas', initialRecetas);
+            const res = await fetch('/api/recetas');
+            return res.json();
+        },
+        create: async (data) => {
+            if (isMock) {
+                const list = getStorage('bakery_recetas', initialRecetas);
+                const newItem = { ...data, id: Date.now() };
+                localStorage.setItem('bakery_recetas', JSON.stringify([newItem, ...list]));
+                return newItem;
+            }
+            const res = await fetch('/api/recetas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        },
+        update: async (id, data) => {
+            if (isMock) {
+                const list = getStorage('bakery_recetas', initialRecetas);
+                const newList = list.map(r => r.id === id ? { ...r, ...data } : r);
+                localStorage.setItem('bakery_recetas', JSON.stringify(newList));
+                return data;
+            }
+            const res = await fetch(`/api/recetas/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        },
+        delete: async (id) => {
+            if (isMock) {
+                const list = getStorage('bakery_recetas', initialRecetas);
+                localStorage.setItem('bakery_recetas', JSON.stringify(list.filter(r => r.id !== id)));
+                return true;
+            }
+            await fetch(`/api/recetas/${id}`, { method: 'DELETE' });
             return true;
         }
     },
@@ -102,15 +264,12 @@ export const api = {
         create: async (data) => {
             if (isMock) {
                 const list = getStorage('bakery_turnos', initialTurnos);
-                const clientes = getStorage('bakery_clientes', initialClientes);
-                const cliente = clientes.find(c => c.id === data.clienteId);
                 const newItem = { 
                     ...data, 
                     id: Date.now(),
-                    Cliente: cliente ? { id: cliente.id, nombre: cliente.nombre, apellido: cliente.apellido } : null
+                    Cliente: { nombre: 'Cliente', apellido: 'Nuevo' } // simplifying for mock
                 };
-                const newList = [newItem, ...list];
-                localStorage.setItem('bakery_turnos', JSON.stringify(newList));
+                localStorage.setItem('bakery_turnos', JSON.stringify([newItem, ...list]));
                 return newItem;
             }
             const res = await fetch('/api/turnos', {
@@ -120,21 +279,19 @@ export const api = {
             });
             return res.json();
         },
-        updateEstado: async (id, estado) => {
+        update: async (id, data) => {
             if (isMock) {
                 const list = getStorage('bakery_turnos', initialTurnos);
-                const newList = list.map(item => 
-                    item.id === id ? { ...item, estado } : item
-                );
+                const newList = list.map(t => t.id === id ? { ...t, ...data } : t);
                 localStorage.setItem('bakery_turnos', JSON.stringify(newList));
-                return true;
+                return data;
             }
-            await fetch(`/api/turnos/${id}/estado`, {
-                method: 'PATCH',
+            const res = await fetch(`/api/turnos/${id}/estado`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado })
+                body: JSON.stringify(data)
             });
-            return true;
+            return res.json();
         },
         delete: async (id) => {
             if (isMock) {
@@ -142,37 +299,8 @@ export const api = {
                 localStorage.setItem('bakery_turnos', JSON.stringify(list.filter(t => t.id !== id)));
                 return true;
             }
-            await fetch(`/api/turnos/${id}`, { method: 'DELETE' });
+            // Add real delete if needed, for now just status update
             return true;
-        }
-    },
-    productos: {
-        getAll: async () => {
-            if (isMock) return getStorage('bakery_productos', initialProductos);
-            const res = await fetch('/api/productos');
-            return res.json();
-        }
-    },
-    ventas: {
-        getAll: async () => {
-            if (isMock) return getStorage('bakery_ventas', initialVentas);
-            const res = await fetch('/api/ventas');
-            return res.json();
-        },
-        create: async (data) => {
-            if (isMock) {
-                const list = getStorage('bakery_ventas', initialVentas);
-                const newItem = { ...data, id: list.length + 1, fecha: new Date().toISOString() };
-                const newList = [newItem, ...list];
-                localStorage.setItem('bakery_ventas', JSON.stringify(newList));
-                return newItem;
-            }
-            const res = await fetch('/api/ventas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            return res.json();
         }
     }
 };

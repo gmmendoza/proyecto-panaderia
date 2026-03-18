@@ -18,61 +18,9 @@ import {
   Star,
   Heart
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../services/api';
 
-const MOCK_RECIPES = [
-  { 
-    id: 1, 
-    nombre: 'Pan Francés Tradicional', 
-    categoria: 'Panes', 
-    tiempo: '4h', 
-    dificultad: 'Media', 
-    img: 'gallery2.png',
-    favorito: true,
-    ingredientes: [
-      { nombre: 'Harina 000', base: 1000, unidad: 'g' },
-      { nombre: 'Agua', base: 650, unidad: 'ml' },
-      { nombre: 'Sal', base: 20, unidad: 'g' },
-      { nombre: 'Levadura Fresca', base: 25, unidad: 'g' }
-    ],
-    pasos: [
-      'Amasado inicial (15 min) hasta lograr elasticidad.',
-      'Primera fermentación en bloque (2h) a temperatura ambiente.',
-      'División y preformado de bollos.',
-      'Descanso de 20 min.',
-      'Formado final de flautas/baguettes.',
-      'Segunda fermentación (1.5h).',
-      'Corte (greñado) y horneado a 220°C con vapor.'
-    ],
-    descripcion: 'Corteza crujiente y miga aireada. El clásico infaltable de la mesa argentina.'
-  },
-  { 
-    id: 2, 
-    nombre: 'Croissant Premium', 
-    categoria: 'Facturería', 
-    tiempo: '12h', 
-    dificultad: 'Alta', 
-    img: 'gallery3.png',
-    favorito: false,
-    ingredientes: [
-      { nombre: 'Harina 0000', base: 500, unidad: 'g' },
-      { nombre: 'Manteca (Hojaldre)', base: 250, unidad: 'g' },
-      { nombre: 'Azúcar', base: 60, unidad: 'g' },
-      { nombre: 'Leche fría', base: 150, unidad: 'ml' }
-    ],
-    pasos: [
-      'Amasado de la masa base (detrempe).',
-      'Repouso en frío (2h).',
-      'Empastado de la manteca.',
-      'Primer pliegue sencillo y frío (1h).',
-      'Segundo pliegue doble y frío (1h).',
-      'Laminado final y corte de triángulos.',
-      'Formado y fermentación final (3h).',
-      'Pintado con huevo y horneado a 180°C.'
-    ],
-    descripcion: 'Hojaldre artesanal con 48 capas de pura manteca. Textura sublime.'
-  }
-];
+const MOCK_RECIPES = []; // Fallback empty
 
 const ProductionCalculator = ({ recipe, onClose }) => {
   const [targetKg, setTargetKg] = useState(1);
@@ -82,6 +30,12 @@ const ProductionCalculator = ({ recipe, onClose }) => {
 
   const toggleCheck = (index) => {
     setCheckedItems(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const handleFinishProduction = async () => {
+    // Proximamente: Descontar insumos del inventario
+    alert(`Producción de ${targetKg}kg de ${recipe.nombre} finalizada con éxito.`);
+    onClose();
   };
 
   return (
@@ -215,6 +169,7 @@ const ProductionCalculator = ({ recipe, onClose }) => {
         <motion.button 
           whileHover={{ scale: 1.02, y: -5 }}
           whileTap={{ scale: 0.98 }}
+          onClick={handleFinishProduction}
           className="btn btn-primary" 
           style={{ width: '100%', height: '70px', fontSize: '1.1rem', fontWeight: 900, borderRadius: '20px', boxShadow: '0 15px 35px rgba(253, 184, 19, 0.4)' }}
         >
@@ -227,7 +182,8 @@ const ProductionCalculator = ({ recipe, onClose }) => {
 };
 
 const Recetario = () => {
-  const [recipes, setRecipes] = useState(MOCK_RECIPES);
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -236,23 +192,56 @@ const Recetario = () => {
     categoria: 'Panes',
     descripcion: '',
     tiempo: '',
-    ingredientes: [{ nombre: '', base: '', unidad: 'g' }]
+    ingredientes: [{ nombre: '', base: '', unidad: 'g' }],
+    pasos: ['']
   });
 
-  const handleAddRecipe = (e) => {
+  useEffect(() => {
+    loadRecipes();
+  }, []);
+
+  const loadRecipes = async () => {
+    try {
+      setLoading(true);
+      const data = await api.recetas.getAll();
+      setRecipes(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddRecipe = async (e) => {
     e.preventDefault();
-    const id = recipes.length + 1;
-    setRecipes([...recipes, { ...newRecipe, id, img: 'gallery1.png', dificultad: 'Media', favorito: false }]);
-    setShowAddModal(false);
-    setNewRecipe({ nombre: '', categoria: 'Panes', descripcion: '', tiempo: '', ingredientes: [{ nombre: '', base: '', unidad: 'g' }] });
+    try {
+      const resp = await api.recetas.create({
+        ...newRecipe,
+        img: 'gallery1.png',
+        dificultad: 'Media',
+        favorito: false
+      });
+      setRecipes([...recipes, resp]);
+      setShowAddModal(false);
+      setNewRecipe({ nombre: '', categoria: 'Panes', descripcion: '', tiempo: '', ingredientes: [{ nombre: '', base: '', unidad: 'g' }], pasos: [''] });
+    } catch (err) {
+      alert('Error al guardar fórmula');
+    }
   };
 
   const addIngredientField = () => {
     setNewRecipe({ ...newRecipe, ingredientes: [...newRecipe.ingredientes, { nombre: '', base: '', unidad: 'g' }] });
   };
 
-  const toggleFavorite = (id) => {
-    setRecipes(prev => prev.map(r => r.id === id ? { ...r, favorito: !r.favorito } : r));
+  const toggleFavorite = async (id) => {
+    const r = recipes.find(x => x.id === id);
+    if (!r) return;
+    try {
+      await api.recetas.update(id, { favorito: !r.favorito });
+      setRecipes(prev => prev.map(recipe => recipe.id === id ? { ...recipe, favorito: !recipe.favorito } : recipe));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filteredRecipes = recipes.filter(r => 

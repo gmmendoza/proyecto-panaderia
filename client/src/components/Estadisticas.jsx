@@ -88,7 +88,7 @@ const Estadisticas = () => {
                   style={{ padding: '2rem', background: 'white', position: 'relative', overflow: 'hidden' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', position: 'relative', zIndex: 1 }}>
-                    <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: `${stat.color}15`, color: stat.color, display: 'flex', alignItems: 'center', justifyCenter: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: `${stat.color}15`, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <stat.icon size={28} />
                     </div>
                     <div style={{ 

@@ -21,26 +21,35 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const MOCK_PRODUCTS = [
-  { id: 1, nombre: 'Pan de Masa Madre', precio: 1200, categoria: 'Panadería', unidad: 'unidad', img: 'prod_pan.png' },
-  { id: 2, nombre: 'Croissant Francés', precio: 850, categoria: 'Pastelería', unidad: 'unidad', img: 'prod_croissant.png' },
-  { id: 3, nombre: 'Hogaza Integral', precio: 1500, categoria: 'Panadería', unidad: 'unidad', img: 'prod_pan.png' },
-  { id: 4, nombre: 'Porción Torta Selva Negra', precio: 2200, categoria: 'Pastelería', unidad: 'porción', img: 'prod_cake.png' },
-  { id: 5, nombre: 'Café Espresso', precio: 950, categoria: 'Cafetería', unidad: 'taza', img: 'gallery3.png' },
-  { id: 6, nombre: 'Pan Casero por Peso', precio: 900, categoria: 'Panadería', unidad: 'kg', porPeso: true, img: 'prod_pan.png' },
-  { id: 7, nombre: 'Facturas Surtidas', precio: 450, categoria: 'Pastelería', unidad: 'unidad', img: 'prod_croissant.png' },
-  { id: 8, nombre: 'Budín de Limón', precio: 1800, categoria: 'Pastelería', unidad: 'unidad', img: 'prod_cake.png' },
-];
+import { api } from '../services/api';
 
 const PuntoDeVenta = () => {
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [cart, setCart] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [editingItemId, setEditingItemId] = useState(null);
   const [editType, setEditType] = useState(null); // 'price' or 'qty'
   const [editValue, setEditValue] = useState('');
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await api.productos.getAll();
+      setProducts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     { id: 'Todos', label: 'Todo', icon: Tags },
@@ -50,7 +59,7 @@ const PuntoDeVenta = () => {
     { id: 'A Peso', label: 'Por Peso', icon: Scale },
   ];
 
-  const filteredProducts = MOCK_PRODUCTS.filter(p => {
+  const filteredProducts = products.filter(p => {
     const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = activeCategory === 'Todos' || 
                            (activeCategory === 'A Peso' ? p.porPeso : p.categoria === activeCategory);
@@ -106,11 +115,28 @@ const PuntoDeVenta = () => {
   const subtotal = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
   const total = subtotal;
 
-  const handleCharge = () => {
+  const handleCharge = async () => {
     if (cart.length === 0) return;
-    setShowSuccess(true);
-    setCart([]);
-    setTimeout(() => setShowSuccess(false), 2500);
+    try {
+      // Registrar venta
+      await api.ventas.create({
+        total,
+        metodoPago,
+        items: cart.map(item => ({ id: item.id, nombre: item.nombre, qty: item.cantidad, total: item.precio * item.cantidad }))
+      });
+
+      // Descontar stock (en paralelo)
+      await Promise.all(cart.map(item => 
+        api.productos.update(item.id, { stock: Math.max(0, item.stock - item.cantidad) })
+      ));
+
+      setShowSuccess(true);
+      setCart([]);
+      loadProducts(); // Recargar productos para reflejar nuevo stock
+      setTimeout(() => setShowSuccess(false), 2500);
+    } catch (err) {
+      alert('Error al procesar la venta');
+    }
   };
 
   return (
@@ -150,35 +176,42 @@ const PuntoDeVenta = () => {
 
         <div className="pos-grid-container">
           <div className="pos-products-grid">
-            <AnimatePresence>
-              {filteredProducts.map(product => (
-                <motion.div 
-                  key={product.id} 
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -10 }}
-                  className="bakery-card glass"
-                  onClick={() => addToCart(product)}
-                  style={{ cursor: 'pointer', padding: 0, overflow: 'hidden' }}
-                >
-                  <div style={{ height: '140px', position: 'relative', overflow: 'hidden' }}>
-                    <img src={product.img} alt={product.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    {product.porPeso && (
-                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--primary)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 900 }}>POR PESO</div>
-                    )}
-                  </div>
-                  <div style={{ padding: '1.25rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{product.categoria}</span>
-                    <h3 style={{ fontSize: '1.1rem', margin: '4px 0 10px 0' }}>{product.nombre}</h3>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="serif" style={{ fontSize: '1.4rem', color: 'var(--primary)' }}>${product.precio}</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/ {product.unidad}</span>
+            {loading ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem', color: 'var(--text-muted)' }}>Cargando catálogo...</div>
+            ) : (
+              <AnimatePresence>
+                {filteredProducts.map(product => (
+                  <motion.div 
+                    key={product.id} 
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -10 }}
+                    className="bakery-card glass"
+                    onClick={() => addToCart(product)}
+                    style={{ cursor: 'pointer', padding: 0, overflow: 'hidden' }}
+                  >
+                    <div style={{ height: '140px', position: 'relative', overflow: 'hidden' }}>
+                      <img src={product.img || 'prod_pan.png'} alt={product.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {product.porPeso && (
+                        <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--primary)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 900 }}>POR PESO</div>
+                      )}
+                      {product.stock <= 5 && (
+                        <div style={{ position: 'absolute', top: '10px', left: '10px', background: '#E25E3E', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 900 }}>BAJO STOCK</div>
+                      )}
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                    <div style={{ padding: '1.25rem' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{product.categoria}</span>
+                      <h3 style={{ fontSize: '1.1rem', margin: '4px 0 10px 0' }}>{product.nombre}</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="serif" style={{ fontSize: '1.4rem', color: 'var(--primary)' }}>${product.precio}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/ {product.unidad}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
           </div>
         </div>
       </div>
