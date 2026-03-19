@@ -1,29 +1,27 @@
-import { 
-  ShoppingBag, 
-  ChevronRight,
-  Star,
-  Clock,
-  MapPin,
-  Heart,
-  Quote,
-  Zap,
-  CalendarDays,
-  TrendingUp,
-  UserPlus,
-  Store,
-  Package,
-  CheckCircle2
-} from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  TrendingUp, 
+  ShoppingBag, 
+  Package, 
+  Clock, 
+  Zap,
+  ArrowUpRight,
+  ChevronRight,
+  Activity,
+  AlertTriangle,
+  Users
+} from 'lucide-react';
 import { api } from '../services/api';
 
-const Inicio = ({ setActiveTab, userRole }) => {
+const Inicio = ({ setActiveTab, userRole, showToast }) => {
   const [stats, setStats] = useState({
     ventasHoy: 0,
+    ventasTotal: 0,
     pedidosPendientes: 0,
-    totalClientes: 0,
-    inventarioCritico: 0
+    productosTotal: 0,
+    inventarioCritico: 0,
+    clientesTotal: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -34,30 +32,23 @@ const Inicio = ({ setActiveTab, userRole }) => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [ventas, pedidos, clientes, productos] = await Promise.all([
+      const [ventas, pedidos, productos, clientes] = await Promise.all([
         api.ventas.getAll(),
         api.pedidos.getAll(),
-        api.clientes.getAll(),
-        api.productos.getAll()
+        api.productos.getAll(),
+        api.clientes.getAll()
       ]);
 
-      // Calcular Ventas Hoy
       const hoy = new Date().toISOString().split('T')[0];
-      const totalHoy = ventas
-        .filter(v => (v.createdAt || v.fecha).startsWith(hoy))
-        .reduce((sum, v) => sum + v.total, 0);
-
-      // Pedidos Pendientes
-      const pendientes = pedidos.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado').length;
-
-      // Inventario Crítico
-      const critico = productos.filter(p => (p.stock || 0) <= 5).length;
-
+      const hoyVentas = ventas.filter(v => (v.createdAt || "").startsWith(hoy));
+      
       setStats({
-        ventasHoy: totalHoy,
-        pedidosPendientes: pendientes,
-        totalClientes: clientes.length,
-        inventarioCritico: critico
+        ventasHoy: hoyVentas.reduce((acc, v) => acc + Number(v.total), 0),
+        ventasTotal: ventas.reduce((acc, v) => acc + Number(v.total), 0),
+        pedidosPendientes: pedidos.filter(p => !['Entregado', 'Cancelado'].includes(p.estado)).length,
+        productosTotal: productos.length,
+        inventarioCritico: productos.filter(p => (p.stock || 0) <= 5).length,
+        clientesTotal: clientes.length
       });
     } catch (err) {
       console.error(err);
@@ -66,260 +57,110 @@ const Inicio = ({ setActiveTab, userRole }) => {
     }
   };
 
-  const categories = [
-    { title: 'Panes de Masa Madre', desc: 'Fermentación lenta y natural.', img: 'gallery2.png' },
-    { title: 'Pastelería Premium', desc: 'Dulces momentos artesanales.', img: 'gallery3.png' },
-    { title: 'Tradición y Aroma', desc: 'Recetas de la abuela.', img: 'gallery1.png' },
-  ];
-
-  const recentActivities = [
-    { id: 1, type: 'venta', title: 'Venta Registrada', desc: 'Ticket #1024 - $12.500', time: 'hace 10 min', icon: ShoppingBag, color: 'var(--primary)' },
-    { id: 2, type: 'produccion', title: 'Producción Finalizada', desc: '10kg Pan Francés', time: 'hace 45 min', icon: Zap, color: 'var(--success)' },
-    { id: 3, type: 'cliente', title: 'Nuevo Cliente', desc: 'Mariana López registrada', time: 'hace 2 horas', icon: UserPlus, color: 'var(--accent)' },
-  ];
-
-  const getGreeting = () => {
-    switch(userRole) {
-      case 'ventas': return 'Bienvenid@, Cajero';
-      case 'produccion': return 'Bienvenid@, Panadero';
-      case 'admin': return 'Bienvenid@, Admin';
-      default: return 'Bienvenid@';
-    }
+  const startDemo = () => {
+    api.demo.enable();
   };
 
-  const today = new Intl.DateTimeFormat('es-ES', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  }).format(new Date());
+  const statCards = [
+    { label: 'Ventas de Hoy', value: `$${stats.ventasHoy.toLocaleString()}`, icon: TrendingUp, color: 'var(--success)', trend: '+12%' },
+    { label: 'Ingresos Totales', value: `$${stats.ventasTotal.toLocaleString()}`, icon: ArrowUpRight, color: 'var(--info)', trend: 'Total' },
+    { label: 'Pedidos Activos', value: stats.pedidosPendientes, icon: ShoppingBag, color: 'var(--warning)', trend: 'En proceso' },
+    { label: 'Stock Crítico', value: stats.inventarioCritico, icon: AlertTriangle, color: 'var(--danger)', trend: 'Urgente' },
+  ];
 
   return (
     <div className="fade-in">
-      {/* Role-Based Greeting & Date */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3.5rem' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
-          <h1 className="page-title" style={{ margin: 0, WebkitTextFillColor: 'initial', background: 'none', color: 'var(--text-main)', fontSize: '2.8rem' }}>
-            {getGreeting()} <span className="wave">👋</span>
-          </h1>
-          <p className="page-subtitle" style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem' }}>
-            Análisis integral de <span style={{ fontWeight: 800, color: 'var(--primary)' }}>LA PANADERÍA EL AROMO</span>
-          </p>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>Dashboard del Sistema</h1>
+          <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Vista general del rendimiento y operaciones de <span style={{ fontWeight: 700, color: 'var(--primary)' }}>EL AROMO</span></p>
         </div>
-        <div className="glass" style={{ padding: '0.8rem 1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: '18px', border: '1px solid var(--border-light)' }}>
-          <Clock size={20} color="var(--primary)" />
-          <span style={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'capitalize', color: 'var(--text-main)', letterSpacing: '0.5px' }}>{today}</span>
-        </div>
+        {!api.demo.isActive() && (
+          <button onClick={startDemo} className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
+            <Zap size={18} /> CARGAR DATOS DEMO
+          </button>
+        )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '3rem', marginBottom: '4rem' }}>
-        <div>
-          {/* Main Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              whileHover={{ scale: 1.02, cursor: 'pointer' }}
-              onClick={() => setActiveTab('estadisticas')}
-              className="bakery-card glass" 
-              style={{ padding: '2rem', background: 'white' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingUp size={24} />
-                </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981', background: '#ecfdf5', padding: '4px 10px', borderRadius: '20px' }}>HOY</span>
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        {statCards.map((stat, i) => (
+          <div key={i} className="bakery-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: `${stat.color}15`, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <stat.icon size={22} />
               </div>
-              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ingresos Totales</p>
-              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '1.8rem', fontWeight: 900 }}>${stats.ventasHoy.toLocaleString()}</h3>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ delay: 0.1 }} 
-              whileHover={{ scale: 1.02, cursor: 'pointer' }}
-              onClick={() => setActiveTab('pedidos')}
-              className="bakery-card glass" 
-              style={{ padding: '2rem', background: 'white' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#fffbeb', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Package size={24} />
-                </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f59e0b', background: '#fffbeb', padding: '4px 10px', borderRadius: '20px' }}>{stats.pedidosPendientes}</span>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pedidos por Entregar</p>
-              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '1.8rem', fontWeight: 900 }}>En Proceso</h3>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ delay: 0.2 }} 
-              whileHover={{ scale: 1.02, cursor: 'pointer' }}
-              onClick={() => setActiveTab('inventario')}
-              className="bakery-card glass" 
-              style={{ padding: '2rem', background: 'white' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Zap size={24} />
-                </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ef4444', background: '#fef2f2', padding: '4px 10px', borderRadius: '20px' }}>{stats.inventarioCritico} URGENTE</span>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Items Bajo Stock</p>
-              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '1.8rem', fontWeight: 900 }}>Alerta Stock</h3>
-            </motion.div>
-          </div>
-
-          {/* Value Proposition / System Explanation */}
-          <div className="bakery-card" style={{ background: 'var(--text-main)', padding: '3rem', borderRadius: '30px', color: 'white', overflow: 'hidden', position: 'relative' }}>
-            <div style={{ position: 'relative', zIndex: 2 }}>
-              <h2 className="serif" style={{ fontSize: '2.2rem', color: 'white', marginBottom: '1.5rem' }}>Sistema de Gestión Integral</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
-                <div style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '1.5rem' }}>
-                  <h4 style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Optimización de Stock</h4>
-                  <p style={{ fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.4 }}>Control real de insumos para evitar faltantes y mermas en producción.</p>
-                </div>
-                <div style={{ borderLeft: '3px solid #10b981', paddingLeft: '1.5rem' }}>
-                  <h4 style={{ color: '#10b981', fontWeight: 900, fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Trazabilidad de Ventas</h4>
-                  <p style={{ fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.4 }}>Histórico detallado de cada ticket para análisis financiero profundo.</p>
-                </div>
-                <div style={{ borderLeft: '3px solid #6366f1', paddingLeft: '1.5rem' }}>
-                  <h4 style={{ color: '#6366f1', fontWeight: 900, fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Compromiso con el Cliente</h4>
-                  <p style={{ fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.4 }}>Gestión de pedidos con señas y fechas críticas de entrega sin errores.</p>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '1.5rem', marginTop: '3rem' }}>
-                <motion.button 
-                  whileHover={{ scale: 1.05, boxShadow: '0 8px 16px var(--primary-glow)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveTab('pos')}
-                  className="btn btn-primary"
-                  style={{ padding: '14px 28px' }}
-                >
-                  IR A PUNTO DE VENTA
-                </motion.button>
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveTab('inventario')}
-                  style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '14px 28px', borderRadius: '14px', fontWeight: 800, cursor: 'pointer' }}
-                >
-                  VER INVENTARIO
-                </motion.button>
-              </div>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: stat.color, background: `${stat.color}10`, padding: '2px 8px', borderRadius: '10px' }}>{stat.trend}</span>
             </div>
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} style={{ position: 'absolute', right: '-50px', bottom: '-50px', opacity: 0.1, fontSize: '15rem' }}>⚙️</motion.div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{stat.label}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '4px' }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+        {/* Left Column: Recent Pulse */}
+        <div className="bakery-card" style={{ padding: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Activity size={20} color="var(--primary)" /> Pulso del Negocio
+            </h3>
+            <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={() => setActiveTab('estadisticas')}>VER REPORTES</button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ padding: '1.5rem', borderRadius: '16px', background: 'var(--bg-surface-soft)', border: '1px solid var(--border-light)' }}>
+              <Users size={24} color="var(--primary)" style={{ marginBottom: '1rem' }} />
+              <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{stats.clientesTotal}</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Clientes Registrados</div>
+            </div>
+            <div style={{ padding: '1.5rem', borderRadius: '16px', background: 'var(--bg-surface-soft)', border: '1px solid var(--border-light)' }}>
+              <Package size={24} color="var(--success)" style={{ marginBottom: '1rem' }} />
+              <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{stats.productosTotal}</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Productos en Catálogo</div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '2.5rem' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem' }}>SISTEMA DE GESTIÓN OPERATIVA</h4>
+            <div style={{ display: 'flex', gap: '1.5rem' }}>
+              <button onClick={() => setActiveTab('pos')} className="btn btn-primary" style={{ padding: '1rem 2rem', borderRadius: '12px' }}>NUEVA VENTA</button>
+              <button onClick={() => setActiveTab('pedidos')} className="btn btn-secondary" style={{ padding: '1rem 2rem', borderRadius: '12px' }}>GESTIONAR PEDIDOS</button>
+            </div>
           </div>
         </div>
 
-        {/* Improved Activity Sidebar */}
-        <aside className="bakery-card glass" style={{ borderRadius: '30px', padding: '2.5rem', background: 'rgba(255,255,255,0.7)' }}>
-          <h3 className="serif" style={{ fontSize: '1.8rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <CalendarDays size={24} color="var(--primary)" /> Pulso del Negocio
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {[
-              { label: 'Total Clientes Fieles', val: stats.totalClientes, icon: UserPlus, color: '#6366f1' },
-              { label: 'Pedidos por Retirar', val: stats.pedidosPendientes, icon: ShoppingBag, color: '#f59e0b' },
-              { label: 'Procesos de Horneado', val: 4, icon: Zap, color: '#10b981' },
-            ].map((stat, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem', borderRadius: '20px', background: 'white', border: '1px solid var(--border-light)' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: `${stat.color}10`, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <stat.icon size={20} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{stat.val}</div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{stat.label}</div>
-                </div>
+        {/* Right Column: Alerts & Status */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="bakery-card" style={{ background: 'var(--text-main)', color: 'white' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem' }}>Estado de Producción</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+              <Clock size={20} color="var(--primary)" />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{stats.pedidosPendientes} Pedidos Pendientes</div>
+                <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>Requieren atención hoy</div>
               </div>
-            ))}
+              <ChevronRight size={16} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+            </div>
           </div>
 
-          <div style={{ marginTop: '3rem', padding: '1.5rem', borderRadius: '20px', background: 'var(--primary)', color: 'white', textAlign: 'center' }}>
-            <CheckCircle2 size={32} style={{ marginBottom: '1rem' }} />
-            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900 }}>Sincronización Total</h4>
-            <p style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '8px' }}>El sistema está operando en tiempo real con la base de datos centralizada.</p>
-          </div>
-        </aside>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2.5rem', marginBottom: '3rem' }}>
-        {/* Quick Actions Grid */}
-        <section>
-          <h3 className="serif" style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Operaciones Rápidas</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-            {[
-              { label: 'Nueva Venta', icon: ShoppingBag, tab: 'pos', color: 'var(--primary)' },
-              { label: 'Registrar Pedido', icon: CalendarDays, tab: 'pedidos', color: '#6366f1' },
-              { label: 'Control Stock', icon: Package, tab: 'inventario', color: '#10b981' },
-              { label: 'Ver Reportes', icon: TrendingUp, tab: 'estadisticas', color: '#ec4899' },
-            ].map((action, i) => (
-              <motion.div 
-                key={i}
-                whileHover={{ y: -5, boxShadow: 'var(--shadow-md)' }}
-                onClick={() => setActiveTab(action.tab)}
-                className="bakery-card glass"
-                style={{ cursor: 'pointer', padding: '1.5rem', textAlign: 'center', background: 'white', border: '1px solid var(--border-light)' }}
-              >
-                <div style={{ width: '50px', height: '50px', margin: '0 auto 1rem', borderRadius: '12px', background: `${action.color}15`, color: action.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <action.icon size={26} />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>{action.label}</span>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Critical Alerts / Tasks */}
-        <section>
-          <h3 className="serif" style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Alertas del Sistema</h3>
-          <div className="bakery-card glass" style={{ background: 'white', padding: '1.5rem' }}>
+          <div className="bakery-card">
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem' }}>Alertas Críticas</h3>
             {stats.inventarioCritico > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#FFF5F5', borderRadius: '12px', border: '1px solid #FEE2E2', marginBottom: '1rem' }}>
-                <Zap size={20} color="#E25E3E" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fee2e2' }}>
+                <AlertTriangle size={20} color="var(--danger)" />
                 <div>
-                  <div style={{ fontWeight: 800, color: '#E25E3E', fontSize: '0.9rem' }}>Atención: Stock Crítico</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{stats.inventarioCritico} productos requieren reposición inmediata.</div>
+                  <div style={{ fontWeight: 800, color: 'var(--danger)', fontSize: '0.9rem' }}>Stock Crítico</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stats.inventarioCritico} productos bajo el mínimo</div>
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#F0FAF7', borderRadius: '12px', border: '1px solid #E6F4EA', marginBottom: '1rem' }}>
-                <CheckCircle2 size={20} color="#10b981" />
-                <div>
-                  <div style={{ fontWeight: 800, color: '#10b981', fontSize: '0.9rem' }}>Inventario Saludable</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Todos los niveles de stock están por encima del mínimo.</div>
-                </div>
+              <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>
+                No hay alertas activas
               </div>
             )}
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'var(--bg-app)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
-              <Clock size={20} color="var(--primary)" />
-              <div>
-                <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.9rem' }}>Próximas Entregas</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{stats.pedidosPendientes} pedidos para hoy.</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* Overview Section */}
-      <div className="bakery-card" style={{ background: 'var(--text-main)', padding: '3rem', borderRadius: '30px', color: 'white' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
-          <div>
-            <h4 style={{ color: 'var(--primary)', fontWeight: 900, marginBottom: '0.5rem' }}>RENDIMIENTO</h4>
-            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Sincronización total con terminales de venta y stock.</p>
-          </div>
-          <div>
-            <h4 style={{ color: 'var(--primary)', fontWeight: 900, marginBottom: '0.5rem' }}>SEGURIDAD</h4>
-            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Respaldo automático de transacciones y clientes.</p>
-          </div>
-          <div>
-            <h4 style={{ color: 'var(--primary)', fontWeight: 900, marginBottom: '0.5rem' }}>CONTROL</h4>
-            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Métricas en tiempo real para decisiones estratégicas.</p>
           </div>
         </div>
       </div>

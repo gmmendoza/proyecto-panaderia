@@ -15,14 +15,14 @@ const initialTurnos = [
         fechaHora: new Date(Date.now() + 86400000).toISOString(),
         estado: 'Pendiente',
         Cliente: { nombre: 'Guadalupe', apellido: 'Mendoza' },
-        nota: 'Torta temática para el sábado'
+        nota: 'Pedido de catering - 20 personas'
     },
     { 
         id: 2, 
         fechaHora: new Date(Date.now() + 172800000).toISOString(),
         estado: 'Pendiente',
-        Cliente: { nombre: 'Ricardo', apellido: 'López' },
-        nota: '10kg de pan mignon'
+        Cliente: { nombre: 'Roberto', apellido: 'Sánchez' },
+        nota: 'Retiro de torta de cumpleaños'
     }
 ];
 
@@ -85,6 +85,13 @@ export const api = {
     demo: {
         enable: () => {
             localStorage.setItem('bakery_demo_mode', 'true');
+            // Populate all stores with initial data if empty
+            localStorage.setItem('bakery_clientes', JSON.stringify(initialClientes));
+            localStorage.setItem('bakery_productos', JSON.stringify(initialProductos));
+            localStorage.setItem('bakery_pedidos', JSON.stringify(initialPedidos));
+            localStorage.setItem('bakery_turnos', JSON.stringify(initialTurnos));
+            localStorage.setItem('bakery_ventas', JSON.stringify(initialVentas));
+            localStorage.setItem('bakery_recetas', JSON.stringify(initialRecetas));
             window.location.reload();
         },
         disable: () => {
@@ -313,6 +320,29 @@ export const api = {
             }
             // Add real delete if needed, for now just status update
             return true;
+        }
+    },
+    stats: {
+        get: async () => {
+            if (isMock) {
+                const clientes = getStorage('bakery_clientes', initialClientes);
+                const productos = getStorage('bakery_productos', initialProductos);
+                const pedidos = getStorage('bakery_pedidos', initialPedidos);
+                const ventas = getStorage('bakery_ventas', initialVentas);
+                
+                const totalVentasHoy = ventas.length; // Simplified
+                const ingresosEstimados = ventas.reduce((acc, v) => acc + (v.total || 0), 0);
+                
+                return {
+                    ventasHoy: totalVentasHoy,
+                    clientesTotal: clientes.length,
+                    pedidosPendientes: pedidos.filter(p => p.estado !== 'Entregado').length,
+                    ingresosEstimados: ingresosEstimados || 45000,
+                    stockBajo: productos.filter(p => p.stock < p.stockMax * 0.2).length
+                };
+            }
+            const res = await fetch('/api/stats');
+            return res.json();
         }
     }
 };

@@ -29,6 +29,15 @@ function App() {
   const [activeTab, setActiveTab] = useState('inicio');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts([...toasts, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
 
   const navItems = [
     { id: 'inicio', label: 'Dashboard', icon: Home, roles: ['admin', 'ventas', 'produccion'] },
@@ -85,27 +94,37 @@ function App() {
       ></div>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="logo-container">
-          <div className="logo-box">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ 
+        background: 'var(--bg-sidebar)', 
+        color: 'white',
+        width: 'var(--sidebar-width)',
+        position: 'fixed',
+        left: sidebarOpen ? 0 : '-var(--sidebar-width)',
+        height: '100vh',
+        zIndex: 1000,
+        padding: '2rem 1.5rem',
+        transition: 'all 0.3s ease'
+      }}>
+        <div className="logo-container" style={{ color: 'white' }}>
+          <div className="logo-box" style={{ background: 'var(--primary)', color: 'white' }}>
             <Store size={24} />
           </div>
           <div className="logo-info">
-            <h2>El Aromo</h2>
-            <span>BAKERY SYSTEM</span>
+            <h2 style={{ color: 'white' }}>El Aromo</h2>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>BAKERY ERP</span>
           </div>
         </div>
 
-        <div className="sidebar-user">
-          <div className="user-avatar">{userInfo.avatar}</div>
+        <div className="sidebar-user" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="user-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{userInfo.avatar}</div>
           <div className="user-info">
-            <h4>{userInfo.name}</h4>
-            <p>{userInfo.roleName}</p>
+            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{userInfo.name}</h4>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{userInfo.roleName}</p>
           </div>
           <motion.div 
             whileHover={{ scale: 1.1, color: 'var(--primary)' }}
             onClick={() => setUserRole(null)}
-            style={{ marginLeft: 'auto', cursor: 'pointer' }}
+            style={{ marginLeft: 'auto', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
           >
             <LogOut size={18} />
           </motion.div>
@@ -113,44 +132,79 @@ function App() {
 
         <nav className="nav-menu">
           {filteredNavItems.map((item) => (
-            <div key={item.id} className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${activeTab === item.id ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavClick(item.id);
-                }}
-              >
-                <item.icon size={20} />
-                <span>{item.label}</span>
-                {activeTab === item.id && <ChevronRight size={14} style={{ marginLeft: 'auto' }} />}
-              </a>
-            </div>
+            <a
+              key={item.id}
+              href="#"
+              className={`nav-link ${activeTab === item.id ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavClick(item.id);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '0.8rem 1rem',
+                borderRadius: '8px',
+                color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)',
+                background: activeTab === item.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                textDecoration: 'none',
+                fontWeight: 500,
+                fontSize: '0.9rem',
+                marginBottom: '4px'
+              }}
+            >
+              <item.icon size={18} />
+              <span>{item.label}</span>
+              {activeTab === item.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--primary)', marginLeft: 'auto' }} />}
+            </a>
           ))}
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="main-content">
+      <main className="main-content" style={{ 
+        marginLeft: 'var(--sidebar-width)', 
+        padding: '2rem 3rem',
+        minHeight: '100vh',
+        width: 'calc(100% - var(--sidebar-width))'
+      }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
           >
-            {activeTab === 'inicio' && <Inicio setActiveTab={setActiveTab} userRole={userRole} />}
-            {activeTab === 'pos' && <PuntoDeVenta />}
-            {activeTab === 'pedidos' && <Pedidos />}
-            {activeTab === 'clientes' && <ClientesList />}
-            {activeTab === 'turnos' && <TurnosList />}
-            {activeTab === 'inventario' && <Inventario />}
-            {activeTab === 'produccion' && <Recetario />}
-            {activeTab === 'estadisticas' && <Estadisticas />}
+            {activeTab === 'inicio' && <Inicio setActiveTab={setActiveTab} userRole={userRole} showToast={addToast} />}
+            {activeTab === 'pos' && <PuntoDeVenta showToast={addToast} />}
+            {activeTab === 'pedidos' && <Pedidos showToast={addToast} />}
+            {activeTab === 'clientes' && <ClientesList showToast={addToast} />}
+            {activeTab === 'turnos' && <TurnosList showToast={addToast} />}
+            {activeTab === 'inventario' && <Inventario showToast={addToast} />}
+            {activeTab === 'produccion' && <Recetario showToast={addToast} />}
+            {activeTab === 'estadisticas' && <Estadisticas showToast={addToast} />}
           </motion.div>
         </AnimatePresence>
+
+        {/* Global Toasts */}
+        <div className="toast-container">
+          <AnimatePresence>
+            {toasts.map(t => (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 50, scale: 0.3 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+                className="toast"
+              >
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: t.type === 'success' ? 'var(--success)' : 'var(--danger)' }} />
+                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.message}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
 
         {/* Floating WhatsApp Button */}
         <motion.div 
@@ -158,8 +212,9 @@ function App() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => window.open('https://wa.me/5491112345678', '_blank')}
+          style={{ width: '56px', height: '56px' }}
         >
-          <MessageCircle size={32} />
+          <MessageCircle size={28} />
         </motion.div>
 
       </main>
