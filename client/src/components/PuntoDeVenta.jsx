@@ -23,7 +23,9 @@ import {
   ShoppingBag,
   QrCode,
   RefreshCcw,
-  Smartphone
+  Smartphone,
+  Percent,
+  Calculator
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -39,6 +41,7 @@ const PuntoDeVenta = ({ showToast }) => {
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [lastSaleData, setLastSaleData] = useState(null);
   const [showQR, setShowQR] = useState(false);
+  const [globalDiscount, setGlobalDiscount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -68,6 +71,45 @@ const PuntoDeVenta = ({ showToast }) => {
     }
   };
 
+  const addToCart = (product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === product.id ? { ...item, cantidad: item.cantidad + (item.unidad === 'kg' ? 0.5 : 1) } : item
+        );
+      }
+      return [...prev, { ...product, cantidad: product.unidad === 'kg' ? 0.5 : 1, discount: 0 }];
+    });
+  };
+
+  const updateQuantity = (id, newQty) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, cantidad: Math.max(0, newQty) };
+      }
+      return item;
+    }).filter(item => item.cantidad > 0));
+  };
+
+  const updateItemDiscount = (id, discount) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, discount: Math.min(100, Math.max(0, discount)) };
+      }
+      return item;
+    }));
+  };
+
+  const subtotal = cart.reduce((acc, item) => {
+    const itemTotal = item.precio * item.cantidad;
+    const itemDiscount = itemTotal * (item.discount / 100);
+    return acc + (itemTotal - itemDiscount);
+  }, 0);
+
+  const totalDiscountAmount = subtotal * (globalDiscount / 100);
+  const total = subtotal - totalDiscountAmount;
+
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     
@@ -82,10 +124,13 @@ const PuntoDeVenta = ({ showToast }) => {
         nombre: item.nombre, 
         qty: item.cantidad, 
         precio: item.precio, 
-        total: item.precio * item.cantidad 
+        discount: item.discount,
+        total: (item.precio * item.cantidad) * (1 - item.discount / 100)
       }));
       
       const resp = await api.ventas.create({
+        subtotal,
+        descuentoGlobal: globalDiscount,
         total,
         metodoPago: paymentMethod,
         items: saleItems
@@ -107,6 +152,7 @@ const PuntoDeVenta = ({ showToast }) => {
       setShowSuccess(true);
       setShowQR(false);
       setCart([]);
+      setGlobalDiscount(0);
       loadData();
       if (showToast) showToast('Venta procesada con éxito');
     } catch (err) {
@@ -115,13 +161,10 @@ const PuntoDeVenta = ({ showToast }) => {
   };
 
   const handleAnular = async (sale) => {
-    if (!window.confirm(`¿Está seguro de anular la venta #${sale.id.toString().slice(-4)} por $${sale.total}?`)) return;
+    if (!window.confirm(`¿Está seguro de anular la venta #${sale.id.toString().slice(-4)}?`)) return;
     
     try {
-        // 1. Delete sale
         await api.ventas.delete(sale.id);
-        
-        // 2. Restore Stock
         if (sale.items) {
             await Promise.all(sale.items.map(async (item) => {
                 const p = products.find(prod => prod.id === item.id || prod.nombre === item.nombre);
@@ -130,7 +173,6 @@ const PuntoDeVenta = ({ showToast }) => {
                 }
             }));
         }
-        
         loadData();
         if (showToast) showToast('Venta anulada y stock restaurado', 'warning');
     } catch (err) {
@@ -139,40 +181,15 @@ const PuntoDeVenta = ({ showToast }) => {
   };
 
   const categories = ['Todos', 'Panadería', 'Pastelería', 'Insumos', 'Cafetería'];
-
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = activeCategory === 'Todos' || p.categoria === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const addToCart = (product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => 
-          item.id === product.id ? { ...item, cantidad: item.cantidad + 1 } : item
-        );
-      }
-      return [...prev, { ...product, cantidad: 1 }];
-    });
-  };
-
-  const updateQuantity = (id, delta) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.cantidad + delta);
-        return { ...item, cantidad: newQty };
-      }
-      return item;
-    }).filter(item => item.cantidad > 0));
-  };
-
-  const total = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-
   return (
     <div className="fade-in">
-      <div style={{ display: 'flex', gap: '2rem', height: 'calc(100vh - 250px)', minHeight: '600px' }}>
+      <div style={{ display: 'flex', gap: '2rem', height: 'calc(100vh - 250px)', minHeight: '650px' }}>
         
         {/* Catalog */}
         <div className="bakery-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', overflow: 'hidden' }}>
@@ -207,7 +224,7 @@ const PuntoDeVenta = ({ showToast }) => {
             ))}
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1.25rem' }}>
               {loading ? (
                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>Cargando...</div>
@@ -217,160 +234,191 @@ const PuntoDeVenta = ({ showToast }) => {
                    whileHover={{ y: -5 }}
                    onClick={() => addToCart(p)}
                    className="bakery-card"
-                   style={{ cursor: 'pointer', padding: '1rem', textAlign: 'center' }}
+                   style={{ cursor: 'pointer', padding: '1rem', textAlign: 'center', position: 'relative' }}
                 >
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--bg-app)', padding: '2px 8px', borderRadius: '10px', fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)' }}>
+                    {p.unidad.toUpperCase()}
+                  </div>
                   <div style={{ width: '50px', height: '50px', borderRadius: '10px', background: 'var(--bg-app)', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                    {p.categoria === 'Pastelería' ? <Star size={20} /> : <Package size={20} />}
+                    {p.unidad === 'kg' ? <Scale size={20} /> : (p.categoria === 'Pastelería' ? <Star size={20} /> : <Package size={20} />)}
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: '4px' }}>{p.nombre}</div>
                   <div style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '1rem' }}>${p.precio}</div>
-                  <div style={{ fontSize: '0.65rem', color: (p.stock || 0) < 10 ? 'var(--danger)' : 'var(--text-muted)' }}>Stock: {p.stock || 0}</div>
+                  <div style={{ fontSize: '0.6rem', color: (p.stock || 0) < 10 ? 'var(--danger)' : 'var(--text-muted)' }}>Stock: {p.stock || 0} {p.unidad}</div>
                 </motion.div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Cart & History Panel */}
-        <aside style={{ width: '420px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* Professional Cart Column */}
+        <aside style={{ width: '450px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          {/* Cart Section */}
-          <div className="bakery-card" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-app)' }}>
-              <ShoppingCart size={18} color="var(--primary)" />
-              <h3 style={{ fontSize: '0.95rem', margin: 0, fontWeight: 900 }}>Carrito de Compras</h3>
+          <div className="bakery-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '2px solid var(--primary-light)' }}>
+            <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-app)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: 'var(--primary)', color: 'white', padding: '6px', borderRadius: '8px' }}><ShoppingCart size={18} /></div>
+                <h3 style={{ fontSize: '1rem', margin: 0, fontWeight: 900 }}>Detalle de Venta</h3>
+              </div>
+              <button onClick={() => setCart([])} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>VACIAR</button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
               {cart.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-light)' }}>
-                  <ShoppingBag size={40} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                  <p style={{ fontSize: '0.8rem' }}>Sin productos</p>
+                <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-light)' }}>
+                  <ShoppingCart size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                  <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>El carrito está vacío</p>
+                  <p style={{ fontSize: '0.75rem' }}>Seleccione productos del catálogo</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {cart.map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--bg-app)', paddingBottom: '0.75rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>{item.nombre}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>${item.precio}</div>
+                    <motion.div layout key={item.id} style={{ padding: '12px', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-light)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{item.nombre}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Precio unitario: ${item.precio}</div>
+                        </div>
+                        <button onClick={() => updateQuantity(item.id, 0)} style={{ color: 'var(--text-light)', border: 'none', background: 'none', cursor: 'pointer' }}><X size={14} /></button>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                         <button style={{ border: 'none', background: 'var(--bg-app)', padding: '4px', borderRadius: '4px' }} onClick={() => updateQuantity(item.id, -1)}><Minus size={12} /></button>
-                         <span style={{ fontWeight: 900, fontSize: '0.85rem' }}>{item.cantidad}</span>
-                         <button style={{ border: 'none', background: 'var(--bg-app)', padding: '4px', borderRadius: '4px' }} onClick={() => updateQuantity(item.id, 1)}><Plus size={12} /></button>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-app)', padding: '4px 10px', borderRadius: '8px' }}>
+                           {item.unidad === 'kg' ? (
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                               <input 
+                                type="number" 
+                                step="0.05"
+                                value={item.cantidad} 
+                                onChange={(e) => updateQuantity(item.id, parseFloat(e.target.value))}
+                                style={{ width: '60px', border: 'none', background: 'transparent', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }} 
+                               />
+                               <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--primary)' }}>KG</span>
+                             </div>
+                           ) : (
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                               <button style={qtyBtnStyle} onClick={() => updateQuantity(item.id, item.cantidad - 1)}><Minus size={12} /></button>
+                               <span style={{ fontWeight: 900, fontSize: '0.9rem', minWidth: '20px', textAlign: 'center' }}>{item.cantidad}</span>
+                               <button style={qtyBtnStyle} onClick={() => updateQuantity(item.id, item.cantidad + 1)}><Plus size={12} /></button>
+                             </div>
+                           )}
+                         </div>
+                         
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                               <Percent size={12} color="var(--success)" />
+                               <input 
+                                 type="number" 
+                                 value={item.discount} 
+                                 onChange={(e) => updateItemDiscount(item.id, parseInt(e.target.value))}
+                                 style={{ width: '35px', border: 'none', borderBottom: '1px dashed var(--success)', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'var(--success)', background: 'transparent' }}
+                                />
+                            </div>
+                            <div style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--primary-dark)' }}>
+                               ${((item.precio * item.cantidad) * (1 - item.discount / 100)).toLocaleString()}
+                            </div>
+                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div style={{ padding: '1.2rem', background: 'white', borderTop: '1px solid var(--border-light)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px' }}>MÉTODO DE PAGO</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-                 {[
-                   { id: 'Efectivo', icon: Banknote },
-                   { id: 'Transferencia', icon: CreditCard },
-                   { id: 'QR', icon: QrCode }
-                 ].map(m => (
+            {/* Billing Summary */}
+            <div style={{ padding: '1.5rem', background: 'var(--bg-app)', borderTop: '2px dashed var(--border-light)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    <span>SUBTOTAL</span>
+                    <span>${subtotal.toLocaleString()}</span>
+                 </div>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--success)', fontWeight: 800 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>DESC. GLOBAL (%)</span>
+                        <input 
+                            type="number" 
+                            value={globalDiscount}
+                            onChange={(e) => setGlobalDiscount(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                            style={{ width: '45px', border: '1px solid var(--success)', borderRadius: '4px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, background: 'white' }}
+                        />
+                    </div>
+                    <span>-${totalDiscountAmount.toLocaleString()}</span>
+                 </div>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.3rem', fontWeight: 950, color: 'var(--primary-dark)', paddingTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                    <span>TOTAL</span>
+                    <span>${total.toLocaleString()}</span>
+                 </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '1rem' }}>
+                 {['Efectivo', 'Transferencia', 'QR'].map(m => (
                    <button 
-                    key={m.id}
-                    onClick={() => setPaymentMethod(m.id)}
+                    key={m}
+                    onClick={() => setPaymentMethod(m)}
                     style={{ 
-                      padding: '8px', borderRadius: '10px', border: '1.5px solid ' + (paymentMethod === m.id ? 'var(--primary)' : 'var(--border-light)'),
-                      background: paymentMethod === m.id ? 'var(--primary-light)' : 'white',
-                      color: paymentMethod === m.id ? 'var(--primary-dark)' : 'var(--text-muted)',
-                      fontSize: '0.65rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer'
+                      padding: '10px', borderRadius: '10px', border: '1.5px solid ' + (paymentMethod === m ? 'var(--primary)' : 'var(--border-light)'),
+                      background: paymentMethod === m ? 'var(--primary)' : 'white',
+                      color: paymentMethod === m ? 'white' : 'var(--text-muted)',
+                      fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer'
                     }}
                    >
-                     <m.icon size={16} /> {m.id}
+                     {m.toUpperCase()}
                    </button>
                  ))}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', alignItems: 'center' }}>
-                <span style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem' }}>TOTAL A COBRAR</span>
-                <span style={{ fontWeight: 900, fontSize: '1.5rem', color: 'var(--primary-dark)' }}>${total.toLocaleString()}</span>
-              </div>
-              <button disabled={cart.length === 0} onClick={handleCheckout} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', height: '50px', fontSize: '1rem' }}>
-                <CheckCircle size={20} /> {paymentMethod === 'QR' ? 'GENERAR QR' : 'FINALIZAR VENTA'}
+              <button disabled={cart.length === 0} onClick={handleCheckout} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', height: '54px', fontSize: '1.1rem', boxShadow: '0 4px 12px var(--shadow)' }}>
+                {paymentMethod === 'QR' ? <QrCode size={20} /> : <CheckCircle size={20} />} 
+                {paymentMethod === 'QR' ? 'GENERAR QR' : 'COBRAR OPERACIÓN'}
               </button>
             </div>
           </div>
 
-          {/* Recent Sales History */}
-          <div className="bakery-card" style={{ flex: 1, padding: '1.2rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900 }}>Ventas de la Sesión</h4>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '10px' }}>
-                    {ventasHoy.length} Tick.
-                </div>
-             </div>
-             
+          {/* Session Feed */}
+          <div className="bakery-card" style={{ height: '200px', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
+             <h4 style={{ margin: '0 0 10px 0', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)' }}>ÚLTIMOS TICKETS</h4>
              <div style={{ flex: 1, overflowY: 'auto' }}>
-                {ventasHoy.length === 0 ? (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', paddingTop: '1rem' }}>No hay ventas registradas</div>
-                ) : ventasHoy.map(v => (
-                    <div key={v.id} style={{ padding: '10px', borderBottom: '1px solid var(--bg-app)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>Venta #{v.id.toString().slice(-4)}</div>
-                            <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{v.metodoPago} • {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ fontWeight: 900, fontSize: '0.85rem' }}>${v.total?.toLocaleString()}</div>
-                            <button 
-                                onClick={() => handleAnular(v)}
-                                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}
-                                title="Anular Venta"
-                            >
-                                <RefreshCcw size={14} />
-                            </button>
-                        </div>
-                    </div>
+                {ventasHoy.map(v => (
+                  <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--bg-app)', alignItems: 'center' }}>
+                     <div style={{ fontSize: '0.7rem', fontWeight: 800 }}>#{v.id.toString().slice(-4)} • {v.metodoPago}</div>
+                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                       <div style={{ fontWeight: 900, fontSize: '0.8rem' }}>${v.total?.toLocaleString()}</div>
+                       <button onClick={() => handleAnular(v)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}><RefreshCcw size={12} /></button>
+                     </div>
+                  </div>
                 ))}
              </div>
           </div>
         </aside>
       </div>
 
-      {/* QR Code Modal Simulation */}
+      {/* QR & Success Modals */}
       <AnimatePresence>
         {showQR && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                 <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bakery-card" style={{ width: '380px', padding: '2.5rem', textAlign: 'center', background: 'white' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                        <h3 style={{ margin: 0 }}>Pago Interoperable</h3>
-                        <button onClick={() => setShowQR(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bakery-card" style={{ width: '400px', padding: '3rem', textAlign: 'center', background: 'white' }}>
+                    <QrCode size={240} style={{ margin: '0 auto 2rem', color: 'var(--primary-dark)' }} />
+                    <div style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '5px' }}>TOTAL A COBRAR</div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 950, color: 'var(--primary)', marginBottom: '2rem' }}>${total.toLocaleString()}</div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                       <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowQR(false)}>CANCELAR</button>
+                       <button className="btn btn-primary" style={{ flex: 2 }} onClick={handleCheckout}>CONFIRMAR PAGO</button>
                     </div>
-                    
-                    <div style={{ background: 'var(--bg-app)', padding: '2rem', borderRadius: '20px', marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
-                        <QrCode size={200} strokeWidth={1.5} color="var(--primary-dark)" />
-                    </div>
-                    
-                    <div style={{ marginBottom: '2rem' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>TOTAL A PAGAR</div>
-                        <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary-dark)' }}>${total.toLocaleString()}</div>
-                    </div>
-                    
-                    <button className="btn btn-primary" onClick={handleCheckout} style={{ width: '100%', justifyContent: 'center', height: '50px' }}>
-                        <Smartphone size={20} /> CONFIRMAR RECEPCIÓN PAGO
-                    </button>
                  </motion.div>
             </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
         {showSuccess && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bakery-card" style={{ width: '350px', padding: '2rem', textAlign: 'center' }}>
-              <CheckCircle size={48} color="var(--success)" style={{ marginBottom: '1rem' }} />
-              <h3>Venta Exitosa</h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Transacción guardada correctamente.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <button className="btn btn-primary" onClick={() => { setShowSuccess(false); imprimirTicket(); }}><Printer size={16} /> IMPRIMIR TICKET</button>
-                <button className="btn btn-secondary" onClick={() => setShowSuccess(false)}>NUEVA VENTA</button>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 6000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bakery-card" style={{ width: '380px', padding: '2.5rem', textAlign: 'center' }}>
+              <div style={{ background: 'var(--success-light)', color: 'var(--success)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <CheckCircle size={32} />
+              </div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>¡Venta Exitosa!</h3>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Ticket #${lastSaleData?.id.slice(-4)} registrado correctamente.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button className="btn btn-primary" onClick={() => setShowSuccess(false)} style={{ height: '48px' }}>NUEVA VENTA</button>
+                <button className="btn btn-secondary" onClick={() => { setShowSuccess(false); window.print(); }}>IMPRIMIR COMPROBANTE</button>
               </div>
             </motion.div>
           </div>
@@ -378,6 +426,19 @@ const PuntoDeVenta = ({ showToast }) => {
       </AnimatePresence>
     </div>
   );
+};
+
+const qtyBtnStyle = {
+  width: '24px',
+  height: '24px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'white',
+  border: '1px solid var(--border-light)',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  color: 'var(--text-main)'
 };
 
 export default PuntoDeVenta;
