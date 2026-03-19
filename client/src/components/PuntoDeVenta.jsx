@@ -18,7 +18,9 @@ import {
   MessageSquare,
   Printer,
   CheckCircle,
-  Package
+  Package,
+  Star,
+  ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -47,13 +49,15 @@ const PuntoDeVenta = ({ showToast }) => {
       ]);
       setProducts(prods);
       
-      // Filter sales for today
       const todayStr = new Date().toLocaleDateString();
-      const filteredVts = vts.filter(v => new Date(v.fecha).toLocaleDateString() === todayStr);
+      const filteredVts = vts.filter(v => {
+        const d = v.createdAt || v.fecha;
+        return d && new Date(d).toLocaleDateString() === todayStr;
+      });
       setVentasHoy(filteredVts);
     } catch (err) {
       console.error(err);
-      if (showToast) showToast('Error al cargar datos del Terminal', 'error');
+      if (showToast) showToast('Error al cargar datos', 'error');
     } finally {
       setLoading(false);
     }
@@ -82,8 +86,8 @@ const PuntoDeVenta = ({ showToast }) => {
   const updateQuantity = (id, delta) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
-        const newCant = Math.max(1, item.cantidad + delta);
-        return { ...item, cantidad: newCant };
+        const newQty = Math.max(1, item.cantidad + delta);
+        return { ...item, cantidad: newQty };
       }
       return item;
     }).filter(item => item.cantidad > 0));
@@ -95,7 +99,7 @@ const PuntoDeVenta = ({ showToast }) => {
 
   const total = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
 
-  const handleCharge = async () => {
+  const handleCheckout = async () => {
     if (cart.length === 0) return;
     try {
       const saleItems = cart.map(item => ({ 
@@ -120,7 +124,6 @@ const PuntoDeVenta = ({ showToast }) => {
         fecha: new Date().toLocaleString()
       });
 
-      // Update stock
       await Promise.all(cart.map(item => 
         api.productos.update(item.id, { stock: Math.max(0, (item.stock || 0) - item.cantidad) })
       ));
@@ -134,28 +137,24 @@ const PuntoDeVenta = ({ showToast }) => {
     }
   };
 
-  // Renamed handleCharge to handleCheckout to match the button's onClick
-  const handleCheckout = handleCharge;
-
   const imprimirTicket = () => {
-    if (showToast) showToast('Iniciando impresión de ticket...', 'info');
-    // Basic mock print
+    if (showToast) showToast('Imprimiendo ticket...', 'info');
     setTimeout(() => { if (showToast) showToast('Ticket impreso'); }, 1000);
   };
 
   return (
     <div className="fade-in">
       <div style={{ display: 'flex', gap: '2rem', height: 'calc(100vh - 250px)', minHeight: '600px' }}>
-
-        {/* Left Panel: Catalog */}
+        
+        {/* Catalog */}
         <div className="bakery-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
              <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 900 }}>Catálogo de Productos</h2>
              <div style={{ position: 'relative', width: '250px' }}>
                 <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
-                <input
-                  type="text"
-                  placeholder="Buscar producto..."
+                <input 
+                  type="text" 
+                  placeholder="Buscar..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '8px', border: '1px solid var(--border-light)', fontSize: '0.85rem' }}
@@ -165,19 +164,14 @@ const PuntoDeVenta = ({ showToast }) => {
 
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '4px' }}>
             {categories.map(cat => (
-              <button
+              <button 
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: '20px',
-                  border: '1.5px solid var(--border-light)',
+                style={{ 
+                  padding: '6px 16px', borderRadius: '20px', border: '1.5px solid var(--border-light)',
                   background: activeCategory === cat ? 'var(--primary)' : 'white',
                   color: activeCategory === cat ? 'white' : 'var(--text-main)',
-                  fontWeight: 800,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
+                  fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap'
                 }}
               >
                 {cat.toUpperCase()}
@@ -185,85 +179,69 @@ const PuntoDeVenta = ({ showToast }) => {
             ))}
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1.25rem' }}>
               {loading ? (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>Cargando catálogo...</div>
-              ) : filteredProducts.length === 0 ? (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>No se encontraron productos</div>
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>Cargando...</div>
               ) : filteredProducts.map(p => (
-                <motion.div
-                  key={p.id}
-                  whileHover={{ y: -5 }}
-                  onClick={() => addToCart(p)}
-                  className="bakery-card"
-                  style={{ cursor: 'pointer', padding: '1rem', textAlign: 'center', border: '1.5px solid var(--border-light)' }}
+                <motion.div 
+                   key={p.id}
+                   whileHover={{ y: -5 }}
+                   onClick={() => addToCart(p)}
+                   className="bakery-card"
+                   style={{ cursor: 'pointer', padding: '1rem', textAlign: 'center' }}
                 >
-                  <div style={{
-                    width: '60px', height: '60px', borderRadius: '12px', background: 'var(--bg-app)',
-                    margin: '0 auto 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--primary)'
-                  }}>
-                    {p.categoria === 'Pastelería' ? <Star size={24} /> : <Package size={24} />}
+                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', background: 'var(--bg-app)', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    {p.categoria === 'Pastelería' ? <Star size={20} /> : <Package size={20} />}
                   </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nombre}</div>
-                  <div style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '1.1rem' }}>${p.precio}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 800 }}>MÁX: {p.stock} UN.</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: '4px' }}>{p.nombre}</div>
+                  <div style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '1rem' }}>${p.precio}</div>
                 </motion.div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right Panel: Cart & Stats */}
-        <aside style={{ width: '420px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-          {/* Session Info */}
-          <div className="bakery-card" style={{ padding: '1.5rem', background: 'var(--bg-sidebar)', color: 'white' }}>
-             <h4 style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '1.2rem' }}>RESUMEN DE SESIÓN ACTUAL</h4>
+        {/* Cart */}
+        <aside style={{ width: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="bakery-card" style={{ padding: '1.25rem', background: 'var(--bg-sidebar)', color: 'white' }}>
+             <h4 style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '1rem' }}>SESIÓN DE HOY</h4>
              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                   <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)' }}>TICKETS</div>
-                   <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{ventasHoy.length}</div>
+                   <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)' }}>OPERA.</div>
+                   <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>{ventasHoy.length}</div>
                 </div>
                 <div>
-                   <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)' }}>CAJA ACUM.</div>
-                   <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>${ventasHoy.reduce((acc, v) => acc + v.total, 0).toLocaleString()}</div>
+                   <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)' }}>TOTAL</div>
+                   <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>${ventasHoy.reduce((acc, v) => acc + (v.total || 0), 0).toLocaleString()}</div>
                 </div>
-             </div>
-             <div style={{ marginTop: '1.2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Ticket Promedio:</span>
-                <span style={{ fontWeight: 800, color: 'var(--accent)' }}>${ventasHoy.length ? (ventasHoy.reduce((acc, v) => acc + v.total, 0) / ventasHoy.length).toFixed(0) : 0}</span>
              </div>
           </div>
 
-          <div className="bakery-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1.5px solid var(--border-light)' }}>
-            <div style={{ padding: '1.2rem 1.5rem', borderBottom: '1.5px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="bakery-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ShoppingCart size={18} color="var(--primary)" />
-              <h3 style={{ fontSize: '1rem', margin: 0, fontWeight: 900 }}>Ticket en Curso</h3>
+              <h3 style={{ fontSize: '0.95rem', margin: 0, fontWeight: 900 }}>Carrito de Compras</h3>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem' }}>
               {cart.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-light)' }}>
-                  <ShoppingBag size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                  <p style={{ fontSize: '0.8rem', fontWeight: 600 }}>Seleccione productos del catálogo para iniciar el cobro.</p>
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-light)' }}>
+                  <ShoppingBag size={40} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                  <p style={{ fontSize: '0.8rem' }}>Sin productos</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {cart.map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '1rem', borderBottom: '1px solid var(--bg-app)' }}>
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--bg-app)', paddingBottom: '0.75rem' }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--primary-dark)' }}>{item.nombre.toUpperCase()}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>${item.precio} x unid.</div>
+                        <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>{item.nombre}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>${item.precio}</div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-app)', borderRadius: '8px', padding: '2px 6px' }}>
-                          <button style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }} onClick={() => updateQuantity(item.id, -1)}><Minus size={12} /></button>
-                          <span style={{ fontWeight: 900, fontSize: '0.9rem', minWidth: '20px', textAlign: 'center' }}>{item.cantidad}</span>
-                          <button style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }} onClick={() => updateQuantity(item.id, 1)}><Plus size={12} /></button>
-                        </div>
-                        <div style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--primary-dark)' }}>${(item.precio * item.cantidad).toLocaleString()}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                         <button style={{ border: 'none', background: 'var(--bg-app)', padding: '4px', borderRadius: '4px' }} onClick={() => updateQuantity(item.id, -1)}><Minus size={12} /></button>
+                         <span style={{ fontWeight: 900, fontSize: '0.85rem' }}>{item.cantidad}</span>
+                         <button style={{ border: 'none', background: 'var(--bg-app)', padding: '4px', borderRadius: '4px' }} onClick={() => updateQuantity(item.id, 1)}><Plus size={12} /></button>
                       </div>
                     </div>
                   ))}
@@ -271,60 +249,28 @@ const PuntoDeVenta = ({ showToast }) => {
               )}
             </div>
 
-            <div style={{ padding: '1.5rem', background: 'var(--bg-app)', borderTop: '2px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <span style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem', letterSpacing: '0.05em' }}>TOTAL NETO A COBRAR</span>
-                <span style={{ fontWeight: 900, fontSize: '1.8rem', color: 'var(--primary-dark)' }}>${total.toLocaleString()}</span>
+            <div style={{ padding: '1.2rem', background: 'var(--bg-app)', borderTop: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <span style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem' }}>TOTAL</span>
+                <span style={{ fontWeight: 900, fontSize: '1.5rem' }}>${total.toLocaleString()}</span>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.2rem' }}>
-                {['Efectivo', 'Tarjeta', 'Mercado Pago'].map(m => (
-                  <button
-                    key={m}
-                    onClick={() => setPaymentMethod(m)}
-                    style={{
-                      padding: '10px', borderRadius: '10px', border: '2px solid',
-                      borderColor: paymentMethod === m ? 'var(--primary)' : 'var(--border-light)',
-                      background: paymentMethod === m ? 'var(--primary-light)' : 'white',
-                      color: paymentMethod === m ? 'var(--primary-dark)' : 'var(--text-muted)',
-                      fontWeight: 800, fontSize: '0.7rem', cursor: 'pointer', transition: 'all 0.2s'
-                    }}
-                  >
-                    {m.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                disabled={cart.length === 0}
-                onClick={handleCheckout}
-                className="btn btn-primary"
-                style={{ width: '100%', height: '54px', fontSize: '0.9rem', justifyContent: 'center' }}
-              >
-                <CheckCircle2 size={20} /> FINALIZAR FACTURACIÓN
+              <button disabled={cart.length === 0} onClick={handleCheckout} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                <CheckCircle size={18} /> COBRAR AHORA
               </button>
             </div>
           </div>
         </aside>
       </div>
 
-      {/* Success Modal */}
       <AnimatePresence>
         {showSuccess && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bakery-card"
-              style={{ width: '400px', padding: '3rem', textAlign: 'center' }}
-            >
-              <CheckCircle size={64} color="var(--success)" style={{ marginBottom: '1.5rem' }} />
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Venta Exitosa</h2>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>El stock ha sido actualizado correctamente.</p>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <button className="btn btn-primary" onClick={imprimirTicket}><Printer size={18} /> IMPRIMIR TICKET</button>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bakery-card" style={{ width: '350px', padding: '2rem', textAlign: 'center' }}>
+              <CheckCircle size={48} color="var(--success)" style={{ marginBottom: '1rem' }} />
+              <h3>Venta Exitosa</h3>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Stock actualizado.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <button className="btn btn-primary" onClick={imprimirTicket}><Printer size={16} /> TICKET</button>
                 <button className="btn btn-secondary" onClick={() => setShowSuccess(false)}>CERRAR</button>
               </div>
             </motion.div>
