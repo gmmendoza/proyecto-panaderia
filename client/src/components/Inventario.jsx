@@ -179,7 +179,7 @@ const Inventario = () => {
     <div className="fade-in">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
-          <h1 className="serif" style={{ fontSize: '3.5rem', margin: 0 }}>Inventario Maestro</h1>
+          <h1 className="serif" style={{ fontSize: '2.5rem', margin: 0 }}>Inventario Maestro</h1>
           <p className="page-subtitle" style={{ fontSize: '1.1rem', margin: '0.5rem 0 0 0' }}>Control absoluto de materias primas y productos terminados.</p>
         </div>
         <motion.button 
@@ -199,7 +199,7 @@ const Inventario = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Variedades</p>
-              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800 }}>{items.length}</div>
+              <div className="serif" style={{ fontSize: '2.2rem', fontWeight: 800 }}>{items.length}</div>
             </div>
             <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(253, 184, 19, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Layers size={32} />
@@ -210,7 +210,7 @@ const Inventario = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Reposición Urgente</p>
-              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800, color: '#E25E3E' }}>{lowStockCount}</div>
+              <div className="serif" style={{ fontSize: '2.2rem', fontWeight: 800, color: '#E25E3E' }}>{lowStockCount}</div>
             </div>
             <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: '#FFF5F5', color: '#E25E3E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <AlertTriangle size={32} />
@@ -221,7 +221,7 @@ const Inventario = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Valor Estimado</p>
-              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800, color: '#10b981' }}>${items.reduce((acc, x) => acc + (x.precio * x.stock), 0).toLocaleString()}</div>
+              <div className="serif" style={{ fontSize: '2.2rem', fontWeight: 800, color: '#10b981' }}>${items.reduce((acc, x) => acc + (x.precio * x.stock), 0).toLocaleString()}</div>
             </div>
             <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: '#F0FAF7', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ShoppingBag size={32} />

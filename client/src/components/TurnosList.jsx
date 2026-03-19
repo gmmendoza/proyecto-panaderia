@@ -29,9 +29,10 @@ export function TurnosList() {
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
     const [formData, setFormData] = useState({
-        clienteId: '',
+        clienteNombre: '',
         fechaHora: '',
-        estado: 'reservado'
+        estado: 'Pendiente',
+        nota: ''
     });
 
     const fetchData = async () => {
@@ -60,10 +61,16 @@ export function TurnosList() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const resp = await api.turnos.create(formData);
+            // Mocking the relation for the UI
+            const newTurno = {
+              ...formData,
+              id: Date.now(),
+              Cliente: { nombre: formData.clienteNombre, apellido: '' }
+            };
+            const resp = await api.turnos.create(newTurno);
             setTurnos([resp, ...turnos]);
             setIsModalOpen(false);
-            setFormData({ clienteId: '', fechaHora: '', estado: 'reservado' });
+            setFormData({ clienteNombre: '', fechaHora: '', estado: 'Pendiente', nota: '' });
         } catch (err) {
             alert('Error al crear registro');
         }
@@ -286,38 +293,65 @@ export function TurnosList() {
                   <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <motion.div
                           className="bakery-card"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: 20, opacity: 0 }}
-                          style={{ width: '400px', padding: '2.5rem' }}
+                          initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                          animate={{ y: 0, opacity: 1, scale: 1 }}
+                          exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                          style={{ width: '500px', padding: '3.5rem', background: 'white', borderRadius: '40px', boxShadow: '0 30px 80px rgba(0,0,0,0.2)' }}
                       >
-                          <h2 className="serif" style={{ fontSize: '1.8rem', marginBottom: '2rem' }}>Programar Entrega</h2>
-                          <form onSubmit={handleSubmit}>
-                              <div style={{ marginBottom: '1.5rem' }}>
-                                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>DNI / Cliente</label>
-                                  <input 
-                                    className="input-field" 
-                                    placeholder="Nombre del cliente..."
-                                    required name="clienteId" 
-                                    onChange={(e) => setFormData({...formData, clienteId: e.target.value})} 
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}
-                                  />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                            <h2 className="serif" style={{ fontSize: '2.4rem', margin: 0 }}>Nueva Entrega</h2>
+                            <button onClick={() => setIsModalOpen(false)} style={{ background: 'var(--bg-app)', border: 'none', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer' }}><X size={20} /></button>
+                          </div>
+
+                          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                              <div className="form-group">
+                                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.8rem', textTransform: 'uppercase' }}>Nombre del Cliente</label>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-app)', padding: '1rem 1.5rem', borderRadius: '15px', border: '1px solid var(--border-light)' }}>
+                                    <UsersRound size={20} color="var(--primary)" />
+                                    <input 
+                                      className="input-field-modal" 
+                                      placeholder="Ej. Juan Pérez..."
+                                      required 
+                                      name="clienteNombre" 
+                                      value={formData.clienteNombre}
+                                      onChange={handleInputChange} 
+                                      style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, fontSize: '1rem' }}
+                                    />
+                                  </div>
                               </div>
-                              <div style={{ marginBottom: '2rem' }}>
-                                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Fecha y Hora</label>
-                                  <input 
-                                    className="input-field" 
-                                    required type="datetime-local" 
-                                    name="fechaHora" 
-                                    value={formData.fechaHora} 
-                                    onChange={handleInputChange} 
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+                                <div className="form-group">
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.8rem', textTransform: 'uppercase' }}>Fecha y Hora de Retiro</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-app)', padding: '1rem 1.5rem', borderRadius: '15px', border: '1px solid var(--border-light)' }}>
+                                      <Timer size={20} color="var(--primary)" />
+                                      <input 
+                                        className="input-field-modal" 
+                                        required 
+                                        type="datetime-local" 
+                                        name="fechaHora" 
+                                        value={formData.fechaHora} 
+                                        onChange={handleInputChange} 
+                                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, fontSize: '1rem' }}
+                                      />
+                                    </div>
+                                </div>
+                              </div>
+
+                              <div className="form-group">
+                                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.8rem', textTransform: 'uppercase' }}>Observaciones / Notas</label>
+                                  <textarea 
+                                    name="nota"
+                                    placeholder="Detalles especiales del pedido..."
+                                    value={formData.nota}
+                                    onChange={handleInputChange}
+                                    style={{ width: '100%', padding: '1.25rem', borderRadius: '15px', border: '1px solid var(--border-light)', background: 'var(--bg-app)', fontSize: '1rem', fontWeight: 600, minHeight: '100px', resize: 'none', outline: 'none' }}
                                   />
                               </div>
 
-                              <div style={{ display: 'flex', gap: '1rem' }}>
-                                  <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} style={{ flex: 1 }}>Cancelar</button>
-                                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Guardar</button>
+                              <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
+                                  <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} style={{ flex: 1, height: '60px', borderRadius: '18px' }}>CANCELAR</button>
+                                  <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '60px', borderRadius: '18px', fontWeight: 900 }}>GUARDAR CITA</button>
                               </div>
                           </form>
                       </motion.div>

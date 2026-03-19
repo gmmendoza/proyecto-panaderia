@@ -99,10 +99,10 @@ const Inicio = ({ setActiveTab, userRole }) => {
       {/* Role-Based Greeting & Date */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3.5rem' }}>
         <div>
-          <h1 className="page-title" style={{ margin: 0, WebkitTextFillColor: 'initial', background: 'none', color: 'var(--text-main)', fontSize: '3.8rem' }}>
+          <h1 className="page-title" style={{ margin: 0, WebkitTextFillColor: 'initial', background: 'none', color: 'var(--text-main)', fontSize: '2.8rem' }}>
             {getGreeting()} <span className="wave">👋</span>
           </h1>
-          <p className="page-subtitle" style={{ margin: '0.5rem 0 0 0', fontSize: '1.2rem' }}>
+          <p className="page-subtitle" style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem' }}>
             Análisis integral de <span style={{ fontWeight: 800, color: 'var(--primary)' }}>LA PANADERÍA EL AROMO</span>
           </p>
         </div>
@@ -130,8 +130,8 @@ const Inicio = ({ setActiveTab, userRole }) => {
                 </div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981', background: '#ecfdf5', padding: '4px 10px', borderRadius: '20px' }}>HOY</span>
               </div>
-              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ingresos Totales</p>
-              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '2.4rem', fontWeight: 900 }}>${stats.ventasHoy.toLocaleString()}</h3>
+              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ingresos Totales</p>
+              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '1.8rem', fontWeight: 900 }}>${stats.ventasHoy.toLocaleString()}</h3>
             </motion.div>
 
             <motion.div 
@@ -149,8 +149,8 @@ const Inicio = ({ setActiveTab, userRole }) => {
                 </div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f59e0b', background: '#fffbeb', padding: '4px 10px', borderRadius: '20px' }}>{stats.pedidosPendientes}</span>
               </div>
-              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pedidos por Entregar</p>
-              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '2.4rem', fontWeight: 900 }}>En Proceso</h3>
+              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pedidos por Entregar</p>
+              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '1.8rem', fontWeight: 900 }}>En Proceso</h3>
             </motion.div>
 
             <motion.div 
@@ -168,15 +168,15 @@ const Inicio = ({ setActiveTab, userRole }) => {
                 </div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ef4444', background: '#fef2f2', padding: '4px 10px', borderRadius: '20px' }}>{stats.inventarioCritico} URGENTE</span>
               </div>
-              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Items Bajo Stock</p>
-              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '2.4rem', fontWeight: 900 }}>Alerta Stock</h3>
+              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Items Bajo Stock</p>
+              <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '1.8rem', fontWeight: 900 }}>Alerta Stock</h3>
             </motion.div>
           </div>
 
           {/* Value Proposition / System Explanation */}
           <div className="bakery-card" style={{ background: 'var(--text-main)', padding: '3rem', borderRadius: '30px', color: 'white', overflow: 'hidden', position: 'relative' }}>
             <div style={{ position: 'relative', zIndex: 2 }}>
-              <h2 className="serif" style={{ fontSize: '2.8rem', color: 'white', marginBottom: '1.5rem' }}>Sistema de Gestión Integral</h2>
+              <h2 className="serif" style={{ fontSize: '2.2rem', color: 'white', marginBottom: '1.5rem' }}>Sistema de Gestión Integral</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
                 <div style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '1.5rem' }}>
                   <h4 style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Optimización de Stock</h4>

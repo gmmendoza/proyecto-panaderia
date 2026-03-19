@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Plus, 
@@ -18,6 +18,7 @@ import {
   Star,
   Heart
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 
 const MOCK_RECIPES = []; // Fallback empty
@@ -39,6 +40,8 @@ const ProductionCalculator = ({ recipe, onClose }) => {
     };
     fetchProducts();
   }, []);
+
+  const scaleFactor = targetKg;
 
   const toggleCheck = (index) => {
     setCheckedItems(prev => ({ ...prev, [index]: !prev[index] }));

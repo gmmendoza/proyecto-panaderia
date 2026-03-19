@@ -12,18 +12,29 @@ const initialClientes = [
 const initialTurnos = [
     { 
         id: 1, 
-        clienteId: 1, 
         fechaHora: new Date(Date.now() + 86400000).toISOString(),
         estado: 'Pendiente',
-        Cliente: { id: 1, nombre: 'Guadalupe', apellido: 'Mendoza' }
+        Cliente: { nombre: 'Guadalupe', apellido: 'Mendoza' },
+        nota: 'Torta temática para el sábado'
+    },
+    { 
+        id: 2, 
+        fechaHora: new Date(Date.now() + 172800000).toISOString(),
+        estado: 'Pendiente',
+        Cliente: { nombre: 'Ricardo', apellido: 'López' },
+        nota: '10kg de pan mignon'
     }
 ];
 
 const initialProductos = [
-    { id: 1, nombre: 'Pan Francés', precio: 1200, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 45, stockMax: 100 },
-    { id: 2, nombre: 'Pan de Masa Madre', precio: 2800, unidad: 'kg', categoria: 'Panadería', porPeso: true, stock: 12, stockMax: 80 },
-    { id: 3, nombre: 'Baguette', precio: 950, unidad: 'u', categoria: 'Panadería', porPeso: false, stock: 30, stockMax: 100 },
-    { id: 4, nombre: 'Croissant Premium', precio: 1500, unidad: 'u', categoria: 'Pastelería', porPeso: false, stock: 120, stockMax: 200 },
+    { id: 1, nombre: 'Pan Francés', precio: 1200, unidad: 'kg', categoria: 'Panadería', stock: 45, stockMax: 100 },
+    { id: 2, nombre: 'Pan de Masa Madre', precio: 2800, unidad: 'kg', categoria: 'Panadería', stock: 12, stockMax: 80 },
+    { id: 3, nombre: 'Baguette', precio: 950, unidad: 'un', categoria: 'Panadería', stock: 3, stockMax: 100 },
+    { id: 4, nombre: 'Croissant Premium', precio: 1500, unidad: 'un', categoria: 'Pastelería', stock: 120, stockMax: 200 },
+    { id: 5, nombre: 'Harina 000', precio: 850, unidad: 'kg', categoria: 'Insumos', stock: 500, stockMax: 1000 },
+    { id: 6, nombre: 'Manteca', precio: 4500, unidad: 'kg', categoria: 'Insumos', stock: 5, stockMax: 50 },
+    { id: 7, nombre: 'Levadura', precio: 1200, unidad: 'kg', categoria: 'Insumos', stock: 2, stockMax: 20 },
+    { id: 8, nombre: 'Azúcar Blanca', precio: 1100, unidad: 'kg', categoria: 'Insumos', stock: 80, stockMax: 200 },
 ];
 
 const initialVentas = [
@@ -31,7 +42,8 @@ const initialVentas = [
 ];
 
 const initialPedidos = [
-    { id: 1, cliente: 'Marta R.', items: 'Torta de Cumpleaños', fechaEntrega: new Date(Date.now() + 172800000).toISOString().split('T')[0], horaEntrega: '17:00', total: 15000, sena: 5000, estado: 'Pendiente', prioridad: 'Media' }
+    { id: 'PED-001', cliente: 'Marta R.', items: 'Torta de Cumpleaños (Vainilla/DDL)', fechaEntrega: new Date(Date.now() + 172800000).toISOString().split('T')[0], horaEntrega: '17:00', total: 15000, sena: 5000, estado: 'Pendiente', prioridad: 'Media' },
+    { id: 'PED-002', cliente: 'Jorge S.', items: '5kg Bizcochos de Grasa', fechaEntrega: new Date(Date.now() + 86400000).toISOString().split('T')[0], horaEntrega: '09:00', total: 6500, sena: 2000, estado: 'Procesando', prioridad: 'Alta' }
 ];
 
 const getStorage = (key, initial) => {
@@ -267,7 +279,7 @@ export const api = {
                 const newItem = { 
                     ...data, 
                     id: Date.now(),
-                    Cliente: { nombre: 'Cliente', apellido: 'Nuevo' } // simplifying for mock
+                    Cliente: data.Cliente || { nombre: 'Cliente', apellido: 'Nuevo' }
                 };
                 localStorage.setItem('bakery_turnos', JSON.stringify([newItem, ...list]));
                 return newItem;

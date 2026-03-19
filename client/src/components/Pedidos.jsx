@@ -197,7 +197,7 @@ const Pedidos = () => {
     <div className="fade-in">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem' }}>
         <div>
-          <h1 className="serif" style={{ fontSize: '3.5rem', margin: 0 }}>Gestión de Pedidos</h1>
+          <h1 className="serif" style={{ fontSize: '2.5rem', margin: 0 }}>Gestión de Pedidos</h1>
           <p className="page-subtitle" style={{ fontSize: '1.2rem', margin: '0.5rem 0 0 0' }}>Control estratégico de reservas y encargos especiales.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -288,9 +288,9 @@ const Pedidos = () => {
               </div>
               <div style={{ borderLeft: '1px solid var(--border-light)', paddingLeft: '1.5rem' }}>
                 <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Estado Financiero</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900 }}>${Number(pedido.total).toLocaleString()}</div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>Seña: ${Number(pedido.sena).toLocaleString()}</div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>Saldo: ${(pedido.total - pedido.sena).toLocaleString()}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900 }}>${Number(pedido.total || 0).toLocaleString()}</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>Seña: ${Number(pedido.sena || 0).toLocaleString()}</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>Saldo: ${(Number(pedido.total || 0) - Number(pedido.sena || 0)).toLocaleString()}</div>
               </div>
             </div>
 
