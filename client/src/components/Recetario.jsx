@@ -6,6 +6,7 @@ import {
   Clock, 
   Layers,
   CheckCircle2,
+  Check,
   Scale,
   Zap,
   X,
