@@ -248,5 +248,3 @@ const TurnosList = ({ showToast }) => {
 };
 
 export default TurnosList;
-
-export default TurnosList;
