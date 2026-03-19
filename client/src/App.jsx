@@ -40,14 +40,14 @@ function App() {
   };
 
   const navItems = [
-    { id: 'inicio', label: 'Dashboard', icon: Home, roles: ['admin', 'ventas', 'produccion'] },
-    { id: 'pos', label: 'Punto de Venta', icon: Store, roles: ['admin', 'ventas'] },
-    { id: 'pedidos', label: 'Pedidos', icon: ShoppingBag, roles: ['admin', 'ventas'] },
-    { id: 'clientes', label: 'Clientes', icon: UsersRound, roles: ['admin', 'ventas'] },
-    { id: 'turnos', label: 'Turnos', icon: Calendar, roles: ['admin', 'ventas', 'produccion'] },
-    { id: 'inventario', label: 'Stock', icon: Box, roles: ['admin', 'produccion'] },
-    { id: 'produccion', label: 'Producción', icon: BookOpen, roles: ['admin', 'produccion'] },
-    { id: 'estadisticas', label: 'Analytics', icon: LineChart, roles: ['admin'] },
+    { id: 'inicio', label: 'Panel de Control', icon: Home, roles: ['admin', 'ventas', 'produccion'] },
+    { id: 'pos', label: 'Terminal de Ventas', icon: Store, roles: ['admin', 'ventas'] },
+    { id: 'pedidos', label: 'Gestión de Pedidos', icon: ShoppingBag, roles: ['admin', 'ventas'] },
+    { id: 'clientes', label: 'Base de Clientes', icon: UsersRound, roles: ['admin', 'ventas'] },
+    { id: 'turnos', label: 'Agenda de Turnos', icon: Calendar, roles: ['admin', 'ventas', 'produccion'] },
+    { id: 'inventario', label: 'Control de Stock', icon: Box, roles: ['admin', 'produccion'] },
+    { id: 'produccion', label: 'Plan de Producción', icon: BookOpen, roles: ['admin', 'produccion'] },
+    { id: 'estadisticas', label: 'Reportes y Auditoría', icon: LineChart, roles: ['admin'] },
   ];
 
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
@@ -60,20 +60,18 @@ function App() {
 
   const handleLogin = (role) => {
     setUserRole(role);
-    // Role-based redirection logic
     if (role === 'produccion') setActiveTab('produccion');
     else if (role === 'ventas') setActiveTab('pos');
     else setActiveTab('inicio');
-    
-    addToast(`Sesión iniciada como ${role === 'admin' ? 'Administrador' : role.charAt(0).toUpperCase() + role.slice(1)}`);
+    addToast(`Acceso concedido para perfil ${role === 'admin' ? 'Administrador' : role.charAt(0).toUpperCase() + role.slice(1)}`);
   };
 
   const getUserInfo = () => {
     switch (userRole) {
-      case 'ventas': return { name: 'Vendedor', roleName: 'Atención al Cliente', avatar: 'VE' };
-      case 'produccion': return { name: 'Maestro Panadero', roleName: 'Producción de Planta', avatar: 'MA' };
-      case 'admin': return { name: 'Admin Central', roleName: 'Gestión Total', avatar: 'AD' };
-      default: return { name: 'Invitado', roleName: 'Modo Consulta', avatar: 'IN' };
+      case 'ventas': return { name: 'Vendedor', roleName: 'Gestión de Ventas', avatar: 'VE' };
+      case 'produccion': return { name: 'Maestro Panadero', roleName: 'Jefe de Planta', avatar: 'MA' };
+      case 'admin': return { name: 'Admin Central', roleName: 'Gerencia General', avatar: 'AD' };
+      default: return { name: 'Visitante', roleName: 'Sin Perfil', avatar: 'VI' };
     }
   };
 
@@ -89,7 +87,7 @@ function App() {
       <header className="system-top-bar" style={{ 
         position: 'fixed', top: 0, right: 0, left: 0, 
         marginLeft: sidebarOpen ? 'var(--sidebar-width)' : 'var(--sidebar-width)',
-        height: '60px', background: 'white', borderBottom: '1px solid var(--border-light)',
+        height: '64px', background: 'white', borderBottom: '1px solid var(--border-light)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', zIndex: 900,
         transition: 'margin-left 0.3s'
       }}>
@@ -97,23 +95,23 @@ function App() {
           <button className="mobile-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
             <Menu size={20} />
           </button>
-          <div style={{ background: 'var(--primary-light)', padding: '6px 14px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--accent)', color: 'var(--primary-dark)', fontSize: '0.8rem', fontWeight: 700 }}>
-            <Store size={14} /> SUCURSAL CENTRAL - EL AROMO
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ background: 'var(--primary-light)', padding: '6px 14px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--accent)', color: 'var(--primary-dark)', fontSize: '0.75rem', fontWeight: 800 }}>
+              <Store size={14} /> SUCURSAL CENTRAL
+            </div>
+            <div style={{ background: 'var(--bg-app)', padding: '6px 14px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700 }}>
+              <Calendar size={14} /> {new Date().toLocaleDateString('es-AR')} • TURNO MAÑANA
+            </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ textAlign: 'right' }}>
-             <div style={{ fontSize: '0.85rem', fontWeight: 800 }}>{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
-             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Turno: Mañana (ACTIVO)</div>
-          </div>
-          <div style={{ width: '1px', height: '24px', background: 'var(--border-light)' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{userInfo.name}</div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>{userInfo.roleName}</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-dark)' }}>{userInfo.name}</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 700 }}>{userInfo.roleName.toUpperCase()}</div>
             </div>
-            <div className="user-avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{userInfo.avatar}</div>
+            <div className="user-avatar" style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, border: '2px solid white', boxShadow: '0 0 0 1px var(--border-light)' }}>{userInfo.avatar}</div>
           </div>
         </div>
       </header>
@@ -134,34 +132,21 @@ function App() {
         height: '100vh',
         zIndex: 1000,
         padding: '2rem 1.5rem',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        <div className="logo-container" style={{ color: 'white' }}>
-          <div className="logo-box" style={{ background: 'var(--primary)', color: 'white' }}>
-            <Store size={24} />
+        <div className="logo-container" style={{ color: 'white', marginBottom: '2rem' }}>
+          <div className="logo-box" style={{ background: 'var(--primary)', color: 'white', width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Store size={22} />
           </div>
-          <div className="logo-info">
-            <h2 style={{ color: 'white' }}>El Aromo</h2>
-            <span style={{ color: 'rgba(255,255,255,0.5)' }}>BAKERY ERP</span>
+          <div className="logo-info" style={{ marginLeft: '12px' }}>
+            <h2 style={{ color: 'white', fontSize: '1.2rem', margin: 0, fontWeight: 900 }}>El Aromo</h2>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.1em' }}>ERP SYSTEM PRO</span>
           </div>
         </div>
 
-        <div className="sidebar-user" style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', margin: '2rem 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="user-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{userInfo.avatar}</div>
-          <div className="user-info">
-            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{userInfo.name}</h4>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{userInfo.roleName}</p>
-          </div>
-          <motion.div 
-            whileHover={{ scale: 1.1, color: 'var(--accent)' }}
-            onClick={() => setUserRole(null)}
-            style={{ marginLeft: 'auto', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
-          >
-            <LogOut size={18} />
-          </motion.div>
-        </div>
-
-        <nav className="nav-menu">
+        <nav className="nav-menu" style={{ flex: 1 }}>
           {filteredNavItems.map((item) => (
             <a
               key={item.id}
@@ -176,36 +161,45 @@ function App() {
                 alignItems: 'center',
                 gap: '12px',
                 padding: '0.8rem 1rem',
-                borderRadius: '8px',
-                color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)',
-                background: activeTab === item.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                borderRadius: '12px',
+                color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.5)',
+                background: activeTab === item.id ? 'var(--primary)' : 'transparent',
                 textDecoration: 'none',
-                fontWeight: 500,
-                fontSize: '0.9rem',
-                marginBottom: '4px'
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                marginBottom: '6px',
+                transition: 'all 0.2s'
               }}
             >
               <item.icon size={18} />
               <span>{item.label}</span>
-              {activeTab === item.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--primary)', marginLeft: 'auto' }} />}
+              {activeTab === item.id && <ChevronRight size={14} style={{ marginLeft: 'auto' }} />}
             </a>
           ))}
         </nav>
+
+        <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+           <button onClick={() => setUserRole(null)} style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 700, fontSize: '0.85rem' }}>
+              <LogOut size={18} /> CERRAR SESIÓN
+           </button>
+        </div>
       </aside>
 
       {/* Main Content */}
       <main className="main-content" style={{ 
         marginLeft: 'var(--sidebar-width)', 
         padding: '2rem 3rem',
+        paddingTop: 'calc(64px + 2rem)',
         minHeight: '100vh',
-        width: 'calc(100% - var(--sidebar-width))'
+        width: 'calc(100% - var(--sidebar-width))',
+        background: 'var(--bg-app)'
       }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'inicio' && <Inicio setActiveTab={setActiveTab} userRole={userRole} showToast={addToast} />}
@@ -230,24 +224,35 @@ function App() {
                 exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
                 className="toast"
               >
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: t.type === 'success' ? 'var(--success)' : 'var(--danger)' }} />
-                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.message}</span>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: t.type === 'success' ? 'var(--success)' : 'var(--danger)' }} />
+                <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{t.message}</span>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
 
-        {/* Floating WhatsApp Button */}
+        {/* System Footer Links */}
+        <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+           <div style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 800 }}>
+             © {new Date().getFullYear()} EL AROMO BAKERY SYSTEM • CORPORATE VERSION 2.5.0
+           </div>
+           <div style={{ display: 'flex', gap: '1.5rem' }}>
+              <a href="#" style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>MANUAL DE USUARIO</a>
+              <a href="#" style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>SOPORTE TÉCNICO</a>
+              <a href="#" style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>POLÍTICA DE PRIVACIDAD</a>
+           </div>
+        </footer>
+
+        {/* Floating Support */}
         <motion.div 
           className="whatsapp-float"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => window.open('https://wa.me/5491112345678', '_blank')}
-          style={{ width: '56px', height: '56px' }}
+          onClick={() => addToast('Estableciendo conexión con Soporte Técnico...')}
+          style={{ width: '56px', height: '56px', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}
         >
           <MessageCircle size={28} />
         </motion.div>
-
       </main>
     </div>
   );

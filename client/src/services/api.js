@@ -27,23 +27,24 @@ const initialTurnos = [
 ];
 
 const initialProductos = [
-    { id: 1, nombre: 'Pan Francés', precio: 1200, unidad: 'kg', categoria: 'Panadería', stock: 45, stockMax: 100 },
-    { id: 2, nombre: 'Pan de Masa Madre', precio: 2800, unidad: 'kg', categoria: 'Panadería', stock: 12, stockMax: 80 },
-    { id: 3, nombre: 'Baguette', precio: 950, unidad: 'un', categoria: 'Panadería', stock: 3, stockMax: 100 },
-    { id: 4, nombre: 'Croissant Premium', precio: 1500, unidad: 'un', categoria: 'Pastelería', stock: 120, stockMax: 200 },
-    { id: 5, nombre: 'Harina 000', precio: 850, unidad: 'kg', categoria: 'Insumos', stock: 500, stockMax: 1000 },
-    { id: 6, nombre: 'Manteca', precio: 4500, unidad: 'kg', categoria: 'Insumos', stock: 5, stockMax: 50 },
-    { id: 7, nombre: 'Levadura', precio: 1200, unidad: 'kg', categoria: 'Insumos', stock: 2, stockMax: 20 },
-    { id: 8, nombre: 'Azúcar Blanca', precio: 1100, unidad: 'kg', categoria: 'Insumos', stock: 80, stockMax: 200 },
+    { id: 1, nombre: 'Pan Francés Tradicional', precio: 1200, unidad: 'kg', categoria: 'Panadería', stock: 45, stockMax: 100 },
+    { id: 2, nombre: 'Hogaza Masa Madre', precio: 3200, unidad: 'un', categoria: 'Panadería', stock: 12, stockMax: 30 },
+    { id: 3, nombre: 'Baguette Artesanal', precio: 950, unidad: 'un', categoria: 'Panadería', stock: 15, stockMax: 50 },
+    { id: 4, nombre: 'Medialuna de Manteca', precio: 600, unidad: 'un', categoria: 'Pastelería', stock: 120, stockMax: 200 },
+    { id: 5, nombre: 'Harina Orgánica 000', precio: 850, unidad: 'kg', categoria: 'Insumos', stock: 500, stockMax: 1000 },
+    { id: 6, nombre: 'Manteca de Campo', precio: 4500, unidad: 'kg', categoria: 'Insumos', stock: 5, stockMax: 50 },
+    { id: 7, nombre: 'Levadura Seca', precio: 1200, unidad: 'kg', categoria: 'Insumos', stock: 8, stockMax: 20 },
 ];
 
 const initialVentas = [
-    { id: 1, createdAt: new Date().toISOString(), total: 4500, metodoPago: 'Efectivo', items: [{ nombre: 'Pan Francés', qty: 2, total: 2400 }] },
+    { id: 1, createdAt: new Date(Date.now() - 3600000).toISOString(), total: 4500, metodoPago: 'Efectivo', items: [{ nombre: 'Pan Francés', qty: 2, total: 2400 }] },
+    { id: 2, createdAt: new Date(Date.now() - 7200000).toISOString(), total: 12500, metodoPago: 'Tarjeta', items: [{ nombre: 'Torta Selva Negra', qty: 1, total: 12500 }] },
+    { id: 3, createdAt: new Date(Date.now() - 10800000).toISOString(), total: 3200, metodoPago: 'Mercado Pago', items: [{ nombre: 'Bizcochos x 1kg', qty: 1, total: 3200 }] },
 ];
 
 const initialPedidos = [
-    { id: 'PED-001', cliente: 'Marta R.', items: 'Torta de Cumpleaños (Vainilla/DDL)', fechaEntrega: new Date(Date.now() + 172800000).toISOString().split('T')[0], horaEntrega: '17:00', total: 15000, sena: 5000, estado: 'Pendiente', prioridad: 'Media' },
-    { id: 'PED-002', cliente: 'Jorge S.', items: '5kg Bizcochos de Grasa', fechaEntrega: new Date(Date.now() + 86400000).toISOString().split('T')[0], horaEntrega: '09:00', total: 6500, sena: 2000, estado: 'Procesando', prioridad: 'Alta' }
+    { id: 'ORD-7742', cliente: 'Beatriz Lópes', items: '24 Medialunas + 1 Tortell de Reyes', fechaEntrega: new Date(Date.now() + 86400000).toISOString().split('T')[0], horaEntrega: '09:30', total: 18500, sena: 9000, estado: 'Confirmado', prioridad: 'Media' },
+    { id: 'ORD-8511', cliente: 'Restaurant El Faro', items: '15kg Pan Francés (Diario)', fechaEntrega: new Date().toISOString().split('T')[0], horaEntrega: '07:00', total: 18000, sena: 0, estado: 'Producción', prioridad: 'Alta' }
 ];
 
 const getStorage = (key, initial) => {
