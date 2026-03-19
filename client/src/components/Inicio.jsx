@@ -41,11 +41,19 @@ const Inicio = ({ setActiveTab, userRole, showToast }) => {
     loadStats();
   }, []);
 
+  const handleExport = (type) => {
+    showToast(`Generando reporte ${type}...`, 'info');
+    setTimeout(() => {
+      showToast(`Reporte ${type} descargado con éxito`, 'success');
+    }, 1500);
+  };
+
   const recentActivity = [
-    { id: 1, type: 'venta', title: 'Nueva Venta #1024', time: 'hace 5 min', amount: '$4,500', status: 'Completado' },
-    { id: 2, type: 'pedido', title: 'Pedido Especial: Marta R.', time: 'hace 12 min', amount: '$15,000', status: 'Asignado' },
-    { id: 3, type: 'stock', title: 'Insumo Crítico: Harina 000', time: 'hace 45 min', amount: 'Stock < 20%', status: 'Alerta' },
-    { id: 4, type: 'turno', title: 'Reserva Confirmada: Juan P.', time: 'hace 1 h', amount: '12:30 PM', status: 'Pendiente' },
+    { id: 1, type: 'venta', title: 'Venta Mostrador #1024', time: 'hace 5 min', amount: '$4,500', status: 'Completado' },
+    { id: 2, type: 'pedido', title: 'Pedido Especial: Catering Mendoza', time: 'hace 12 min', amount: '$15,000', status: 'En Prep.' },
+    { id: 3, type: 'stock', title: 'Ingreso Mercadería: Harina/Manteca', time: 'hace 25 min', amount: 'Verificado', status: 'OK' },
+    { id: 4, type: 'turno', title: 'Reserva Confirmada: Cumpleaños Sol', time: 'hace 45 min', amount: '18:30 HS', status: 'Pendiente' },
+    { id: 5, type: 'stock', title: 'Alerta Stock: Dulce de Leche Repostero', time: 'hace 1 h', amount: '< 5kg', status: 'CRÍTICO' },
   ];
 
   const statCards = [
@@ -66,8 +74,8 @@ const Inicio = ({ setActiveTab, userRole, showToast }) => {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '4px' }}>Métricas consolidadas Sucursal Central • Perfil de {userRole === 'admin' ? 'Gerencia' : 'Operaciones'}</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-           <button className="btn" style={{ background: 'white', border: '1px solid var(--border-light)', fontSize: '0.8rem', fontWeight: 700 }}>EXCEL</button>
-           <button className="btn" style={{ background: 'white', border: '1px solid var(--border-light)', fontSize: '0.8rem', fontWeight: 700 }}>PDF</button>
+           <button onClick={() => handleExport('EXCEL')} className="btn" style={{ background: 'white', border: '1.5px solid var(--border-light)', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-main)' }}>EXCEL</button>
+           <button onClick={() => handleExport('PDF')} className="btn" style={{ background: 'white', border: '1.5px solid var(--border-light)', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-main)' }}>PDF</button>
         </div>
       </header>
 
@@ -114,7 +122,7 @@ const Inicio = ({ setActiveTab, userRole, showToast }) => {
                        <motion.div 
                         initial={{ height: 0 }}
                         animate={{ height: `${h}%` }}
-                        style={{ width: '100%', background: i === 4 ? 'var(--accent)' : 'var(--primary)', borderRadius: '6px 6px 0 0', minHeight: '10px' }}
+                        style={{ width: '100%', background: i === 4 ? 'var(--accent)' : 'var(--primary)', borderRadius: '12px 12px 0 0', minHeight: '10px' }}
                       />
                       {i === 4 && <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary-dark)' }}>PICO</div>}
                     </div>
@@ -141,11 +149,11 @@ const Inicio = ({ setActiveTab, userRole, showToast }) => {
                     transition: 'background 0.2s'
                   }} className="activity-row">
                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {a.type === 'venta' ? <TrendingUp size={16} color="var(--primary)" /> : <Package size={16} color="var(--primary)" />}
+                        {a.type === 'venta' ? <TrendingUp size={16} color="var(--primary)" /> : a.type === 'stock' ? <Package size={16} color="var(--warning)" /> : <Package size={16} color="var(--primary)" />}
                      </div>
                      <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>{a.title}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>{a.time} • ESTADO: <span style={{ color: a.status === 'Alerta' ? 'var(--danger)' : 'var(--success)' }}>{a.status.toUpperCase()}</span></div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>{a.time} • ESTADO: <span style={{ color: a.status === 'CRÍTICO' ? 'var(--danger)' : a.status === 'OK' ? 'var(--success)' : 'var(--primary)' }}>{a.status.toUpperCase()}</span></div>
                      </div>
                      <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--primary-dark)' }}>{a.amount}</div>
@@ -166,11 +174,11 @@ const Inicio = ({ setActiveTab, userRole, showToast }) => {
                 <button onClick={() => setActiveTab('pos')} className="btn btn-primary" style={{ width: '100%', justifyContent: 'flex-start', gap: '12px' }}>
                    <MousePointer2 size={18} /> Nueva Venta Directa
                 </button>
-                <button onClick={() => setActiveTab('pedidos')} className="btn" style={{ width: '100%', justifyContent: 'flex-start', gap: '12px', border: '1px solid var(--border-light)', background: 'white' }}>
+                <button onClick={() => setActiveTab('pedidos')} className="btn" style={{ width: '100%', justifyContent: 'flex-start', gap: '12px', border: '1.5px solid var(--border-light)', background: 'white', color: 'var(--text-main)' }}>
                    <Clock size={18} /> Ver Pedidos Críticos
                 </button>
-                <button onClick={() => setActiveTab('inventario')} className="btn" style={{ width: '100%', justifyContent: 'flex-start', gap: '12px', border: '1px solid var(--border-light)', background: 'white' }}>
-                   <Package size={18} /> Cargar Recepción Harina
+                <button onClick={() => setActiveTab('inventario')} className="btn" style={{ width: '100%', justifyContent: 'flex-start', gap: '12px', border: '1.5px solid var(--border-light)', background: 'white', color: 'var(--text-main)' }}>
+                   <Package size={18} /> Recepción de Productos
                 </button>
              </div>
           </div>

@@ -237,8 +237,8 @@ function App() {
              © {new Date().getFullYear()} EL AROMO BAKERY SYSTEM • CORPORATE VERSION 2.5.0
            </div>
            <div style={{ display: 'flex', gap: '1.5rem' }}>
-              <a href="#" style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>MANUAL DE USUARIO</a>
-              <a href="#" style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>SOPORTE TÉCNICO</a>
+              <button onClick={() => addToast('Manual de Usuario abierto (MANUAL_USUARIO.md en raíz)', 'info')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>MANUAL DE USUARIO</button>
+              <button onClick={() => addToast('Conectando con Soporte Central elaromo.com.ar...', 'info')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>SOPORTE CENTRAL</button>
               <a href="#" style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>POLÍTICA DE PRIVACIDAD</a>
            </div>
         </footer>

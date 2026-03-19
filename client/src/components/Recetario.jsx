@@ -21,6 +21,7 @@ const ProductionCalculator = ({ recipe, onClose, showToast }) => {
   const [targetKg, setTargetKg] = useState(1);
   const [products, setProducts] = useState([]);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [checkedIngredients, setCheckedIngredients] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -34,12 +35,19 @@ const ProductionCalculator = ({ recipe, onClose, showToast }) => {
     fetchProducts();
   }, []);
 
+  const toggleIngredient = (idx) => {
+    if (checkedIngredients.includes(idx)) {
+      setCheckedIngredients(checkedIngredients.filter(i => i !== idx));
+    } else {
+      setCheckedIngredients([...checkedIngredients, idx]);
+    }
+  };
+
   const handleFinishProduction = async () => {
     try {
       setIsFinishing(true);
       const scaleFactor = Number(targetKg);
       
-      // Update stock for each ingredient
       const updatePromises = recipe.ingredientes.map(ing => {
         const product = products.find(p => p.nombre.toLowerCase() === ing.nombre.toLowerCase());
         if (product) {
@@ -77,7 +85,7 @@ const ProductionCalculator = ({ recipe, onClose, showToast }) => {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Orden de Producción</h2>
+        <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 900 }}>Orden de Producción</h2>
         <button onClick={onClose} className="btn btn-secondary" style={{ padding: '0.4rem' }}><X size={20} /></button>
       </div>
 
@@ -94,16 +102,33 @@ const ProductionCalculator = ({ recipe, onClose, showToast }) => {
         </div>
       </div>
 
-      <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <TrendingDown size={16} color="var(--danger)" /> Insumos a descontar
+      <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+        <PlusCircle size={16} color="var(--primary)" /> CHECKLIST DE INSUMOS (Tilde para marcar)
       </h3>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
         {recipe.ingredientes.map((ing, i) => {
           const amount = (Number(ing.base) * Number(targetKg));
+          const isChecked = checkedIngredients.includes(i);
           return (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)', fontSize: '0.85rem' }}>
-              <span style={{ fontWeight: 600 }}>{ing.nombre}</span>
+            <div 
+              key={i} 
+              onClick={() => toggleIngredient(i)}
+              style={{ 
+                display: 'flex', justifyContent: 'space-between', padding: '0.75rem', 
+                borderRadius: '8px', border: isChecked ? '1.5px solid var(--success)' : '1px solid var(--border-light)', 
+                fontSize: '0.85rem', cursor: 'pointer',
+                background: isChecked ? 'var(--bg-app)' : 'white',
+                opacity: isChecked ? 0.6 : 1,
+                textDecoration: isChecked ? 'line-through' : 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isChecked ? 'var(--success)' : 'white' }}>
+                  {isChecked && <Check size={12} color="white" />}
+                </div>
+                <span style={{ fontWeight: 600 }}>{ing.nombre}</span>
+              </div>
               <span style={{ fontWeight: 800 }}>{amount.toLocaleString()} {ing.unidad}</span>
             </div>
           );
@@ -111,7 +136,7 @@ const ProductionCalculator = ({ recipe, onClose, showToast }) => {
       </div>
 
       <div style={{ padding: '1rem', background: 'var(--bg-app)', borderRadius: '12px' }}>
-         <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>MÉTODO DE ELABORACIÓN</h4>
+         <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 800 }}>MÉTODO DE ELABORACIÓN</h4>
          {recipe.pasos?.map((p, i) => (
            <div key={i} style={{ fontSize: '0.8rem', marginBottom: '0.5rem', display: 'flex', gap: '8px' }}>
              <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{i + 1}.</span>
@@ -124,9 +149,9 @@ const ProductionCalculator = ({ recipe, onClose, showToast }) => {
         disabled={isFinishing}
         onClick={handleFinishProduction}
         className="btn btn-primary" 
-        style={{ width: '100%', marginTop: '2rem', height: '50px' }}
+        style={{ width: '100%', marginTop: '2rem', height: '50px', letterSpacing: '0.1em' }}
       >
-        <Zap size={18} /> {isFinishing ? 'PROCESANDO...' : 'INICIAR Y DESCONTAR STOCK'}
+        <CheckCircle2 size={18} /> {isFinishing ? 'PROCESANDO...' : 'FINALIZAR Y DESCONTAR TOTAL'}
       </button>
     </motion.div>
   );
