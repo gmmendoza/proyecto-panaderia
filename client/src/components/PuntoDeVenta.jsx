@@ -25,6 +25,7 @@ import { api } from '../services/api';
 
 const PuntoDeVenta = ({ showToast }) => {
   const [products, setProducts] = useState([]);
+  const [ventasHoy, setVentasHoy] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [cart, setCart] = useState([]);
@@ -34,17 +35,25 @@ const PuntoDeVenta = ({ showToast }) => {
   const [lastSaleData, setLastSaleData] = useState(null);
 
   useEffect(() => {
-    loadProducts();
+    loadData();
   }, []);
 
-  const loadProducts = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await api.productos.getAll();
-      setProducts(data);
+      const [prods, vts] = await Promise.all([
+        api.productos.getAll(),
+        api.ventas.getAll()
+      ]);
+      setProducts(prods);
+      
+      // Filter sales for today
+      const todayStr = new Date().toLocaleDateString();
+      const filteredVts = vts.filter(v => new Date(v.fecha).toLocaleDateString() === todayStr);
+      setVentasHoy(filteredVts);
     } catch (err) {
       console.error(err);
-      if (showToast) showToast('Error al cargar catálogo', 'error');
+      if (showToast) showToast('Error al cargar datos del Terminal', 'error');
     } finally {
       setLoading(false);
     }
@@ -118,7 +127,7 @@ const PuntoDeVenta = ({ showToast }) => {
 
       setShowSuccess(true);
       setCart([]);
-      loadProducts();
+      loadData();
       if (showToast) showToast('Venta procesada con éxito');
     } catch (err) {
       if (showToast) showToast('Error al procesar venta', 'error');
