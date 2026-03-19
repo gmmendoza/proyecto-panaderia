@@ -24,12 +24,14 @@ import Estadisticas from './components/Estadisticas';
 import Inicio from './components/Inicio';
 import Login from './components/Login';
 import Pedidos from './components/Pedidos';
+import ManualModal from './components/ManualModal';
 
 function App() {
   const [activeTab, setActiveTab] = useState('inicio');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [showManual, setShowManual] = useState(false);
 
   const addToast = (message, type = 'success') => {
     const id = Date.now();
@@ -234,14 +236,16 @@ function App() {
         {/* System Footer Links */}
         <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
            <div style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 800 }}>
-             © {new Date().getFullYear()} EL AROMO BAKERY SYSTEM • CORPORATE VERSION 2.5.0
+             © {new Date().getFullYear()} EL AROMO BAKERY SYSTEM • CORPORATE VERSION 2.5.2
            </div>
            <div style={{ display: 'flex', gap: '1.5rem' }}>
-              <button onClick={() => addToast('Manual de Usuario abierto (MANUAL_USUARIO.md en raíz)', 'info')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>MANUAL DE USUARIO</button>
+              <button onClick={() => setShowManual(true)} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>MANUAL DE USUARIO</button>
               <button onClick={() => addToast('Conectando con Soporte Central elaromo.com.ar...', 'info')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>SOPORTE CENTRAL</button>
               <a href="#" style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>POLÍTICA DE PRIVACIDAD</a>
            </div>
         </footer>
+
+        <ManualModal isOpen={showManual} onClose={() => setShowManual(false)} />
 
         {/* Floating Support */}
         <motion.div 
