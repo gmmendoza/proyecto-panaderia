@@ -110,30 +110,34 @@ h1, h2, h3, h4, .serif {
 
 /* Layout & Sidebar */
 /* System Classes */
+/* Micro-interactions & Senior Polish */
 .bakery-card {
-  background: var(--bg-surface);
-  border-radius: var(--radius-md);
+  background: white;
   border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-md);
-  padding: 1.5rem;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .bakery-card:hover {
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0.6rem 1.25rem;
+  padding: 0.75rem 1.5rem;
   border-radius: var(--radius-sm);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.85rem;
   cursor: pointer;
+  transition: all 0.2s;
   border: none;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .btn-primary {
@@ -143,7 +147,8 @@ h1, h2, h3, h4, .serif {
 
 .btn-primary:hover {
   background: var(--primary-dark);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 94, 60, 0.3);
+  transform: scale(1.02);
 }
 
 .btn-secondary {

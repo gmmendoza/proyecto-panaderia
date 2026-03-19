@@ -58,34 +58,65 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLogin = (role) => {
+    setUserRole(role);
+    // Role-based redirection logic
+    if (role === 'produccion') setActiveTab('produccion');
+    else if (role === 'ventas') setActiveTab('pos');
+    else setActiveTab('inicio');
+    
+    addToast(`Sesión iniciada como ${role === 'admin' ? 'Administrador' : role.charAt(0).toUpperCase() + role.slice(1)}`);
+  };
+
   const getUserInfo = () => {
     switch (userRole) {
-      case 'ventas': return { name: 'Cajero', roleName: 'Ventas y Atención', avatar: 'VN' };
-      case 'produccion': return { name: 'Maestro Panadero', roleName: 'Producción', avatar: 'PR' };
-      case 'admin': return { name: 'Guadalupe', roleName: 'Administrador Principal', avatar: 'ADM' };
-      default: return { name: 'Usuario', roleName: 'Acceso Directo', avatar: 'U' };
+      case 'ventas': return { name: 'Vendedor', roleName: 'Atención al Cliente', avatar: 'VE' };
+      case 'produccion': return { name: 'Maestro Panadero', roleName: 'Producción de Planta', avatar: 'MA' };
+      case 'admin': return { name: 'Admin Central', roleName: 'Gestión Total', avatar: 'AD' };
+      default: return { name: 'Invitado', roleName: 'Modo Consulta', avatar: 'IN' };
     }
   };
 
   const userInfo = getUserInfo();
 
   if (!userRole) {
-    return <Login setRole={(role) => {
-      setUserRole(role);
-      // Everyone starts at Inicio
-      setActiveTab('inicio');
-    }} />;
+    return <Login setRole={handleLogin} />;
   }
 
   return (
     <div className={`app-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
-      {/* Mobile Menu Trigger */}
-      <button 
-        className="mobile-toggle"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {/* Top Professional Header */}
+      <header className="system-top-bar" style={{ 
+        position: 'fixed', top: 0, right: 0, left: 0, 
+        marginLeft: sidebarOpen ? 'var(--sidebar-width)' : 'var(--sidebar-width)',
+        height: '60px', background: 'white', borderBottom: '1px solid var(--border-light)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', zIndex: 900,
+        transition: 'margin-left 0.3s'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <button className="mobile-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
+            <Menu size={20} />
+          </button>
+          <div style={{ background: 'var(--primary-light)', padding: '6px 14px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--accent)', color: 'var(--primary-dark)', fontSize: '0.8rem', fontWeight: 700 }}>
+            <Store size={14} /> SUCURSAL CENTRAL - EL AROMO
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ textAlign: 'right' }}>
+             <div style={{ fontSize: '0.85rem', fontWeight: 800 }}>{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Turno: Mañana (ACTIVO)</div>
+          </div>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-light)' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{userInfo.name}</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>{userInfo.roleName}</div>
+            </div>
+            <div className="user-avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{userInfo.avatar}</div>
+          </div>
+        </div>
+      </header>
 
       {/* Mobile Overlay */}
       <div 
@@ -99,7 +130,7 @@ function App() {
         color: 'white',
         width: 'var(--sidebar-width)',
         position: 'fixed',
-        left: sidebarOpen ? 0 : '-var(--sidebar-width)',
+        left: 0,
         height: '100vh',
         zIndex: 1000,
         padding: '2rem 1.5rem',
@@ -115,14 +146,14 @@ function App() {
           </div>
         </div>
 
-        <div className="sidebar-user" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="user-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{userInfo.avatar}</div>
+        <div className="sidebar-user" style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', margin: '2rem 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="user-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{userInfo.avatar}</div>
           <div className="user-info">
             <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{userInfo.name}</h4>
             <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{userInfo.roleName}</p>
           </div>
           <motion.div 
-            whileHover={{ scale: 1.1, color: 'var(--primary)' }}
+            whileHover={{ scale: 1.1, color: 'var(--accent)' }}
             onClick={() => setUserRole(null)}
             style={{ marginLeft: 'auto', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
           >
