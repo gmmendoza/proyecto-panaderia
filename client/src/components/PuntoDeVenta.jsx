@@ -20,7 +20,10 @@ import {
   CheckCircle,
   Package,
   Star,
-  ShoppingBag
+  ShoppingBag,
+  QrCode,
+  RefreshCcw,
+  Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -35,6 +38,7 @@ const PuntoDeVenta = ({ showToast }) => {
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [lastSaleData, setLastSaleData] = useState(null);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -53,13 +57,84 @@ const PuntoDeVenta = ({ showToast }) => {
       const filteredVts = vts.filter(v => {
         const d = v.createdAt || v.fecha;
         return d && new Date(d).toLocaleDateString() === todayStr;
-      });
+      }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
       setVentasHoy(filteredVts);
     } catch (err) {
       console.error(err);
       if (showToast) showToast('Error al cargar datos', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    
+    if (paymentMethod === 'QR' && !showQR) {
+        setShowQR(true);
+        return;
+    }
+
+    try {
+      const saleItems = cart.map(item => ({ 
+        id: item.id, 
+        nombre: item.nombre, 
+        qty: item.cantidad, 
+        precio: item.precio, 
+        total: item.precio * item.cantidad 
+      }));
+      
+      const resp = await api.ventas.create({
+        total,
+        metodoPago: paymentMethod,
+        items: saleItems
+      });
+
+      setLastSaleData({
+        id: resp.id || 'T-' + Math.floor(Math.random() * 10000),
+        total,
+        metodoPago: paymentMethod,
+        items: saleItems,
+        fecha: new Date().toLocaleString()
+      });
+
+      // Update Stock
+      await Promise.all(cart.map(item => 
+        api.productos.update(item.id, { stock: Math.max(0, (item.stock || 0) - item.cantidad) })
+      ));
+
+      setShowSuccess(true);
+      setShowQR(false);
+      setCart([]);
+      loadData();
+      if (showToast) showToast('Venta procesada con éxito');
+    } catch (err) {
+      if (showToast) showToast('Error al procesar venta', 'error');
+    }
+  };
+
+  const handleAnular = async (sale) => {
+    if (!window.confirm(`¿Está seguro de anular la venta #${sale.id.toString().slice(-4)} por $${sale.total}?`)) return;
+    
+    try {
+        // 1. Delete sale
+        await api.ventas.delete(sale.id);
+        
+        // 2. Restore Stock
+        if (sale.items) {
+            await Promise.all(sale.items.map(async (item) => {
+                const p = products.find(prod => prod.id === item.id || prod.nombre === item.nombre);
+                if (p) {
+                    await api.productos.update(p.id, { stock: (p.stock || 0) + (item.qty || 1) });
+                }
+            }));
+        }
+        
+        loadData();
+        if (showToast) showToast('Venta anulada y stock restaurado', 'warning');
+    } catch (err) {
+        if (showToast) showToast('Error al anular venta', 'error');
     }
   };
 
@@ -93,54 +168,7 @@ const PuntoDeVenta = ({ showToast }) => {
     }).filter(item => item.cantidad > 0));
   };
 
-  const removeFromCart = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
-
   const total = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
-    try {
-      const saleItems = cart.map(item => ({ 
-        id: item.id, 
-        nombre: item.nombre, 
-        qty: item.cantidad, 
-        precio: item.precio, 
-        total: item.precio * item.cantidad 
-      }));
-      
-      const resp = await api.ventas.create({
-        total,
-        metodoPago: paymentMethod,
-        items: saleItems
-      });
-
-      setLastSaleData({
-        id: resp.id || 'T-' + Math.floor(Math.random() * 10000),
-        total,
-        metodoPago: paymentMethod,
-        items: saleItems,
-        fecha: new Date().toLocaleString()
-      });
-
-      await Promise.all(cart.map(item => 
-        api.productos.update(item.id, { stock: Math.max(0, (item.stock || 0) - item.cantidad) })
-      ));
-
-      setShowSuccess(true);
-      setCart([]);
-      loadData();
-      if (showToast) showToast('Venta procesada con éxito');
-    } catch (err) {
-      if (showToast) showToast('Error al procesar venta', 'error');
-    }
-  };
-
-  const imprimirTicket = () => {
-    if (showToast) showToast('Imprimiendo ticket...', 'info');
-    setTimeout(() => { if (showToast) showToast('Ticket impreso'); }, 1000);
-  };
 
   return (
     <div className="fade-in">
@@ -196,30 +224,19 @@ const PuntoDeVenta = ({ showToast }) => {
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: '4px' }}>{p.nombre}</div>
                   <div style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '1rem' }}>${p.precio}</div>
+                  <div style={{ fontSize: '0.65rem', color: (p.stock || 0) < 10 ? 'var(--danger)' : 'var(--text-muted)' }}>Stock: {p.stock || 0}</div>
                 </motion.div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Cart */}
-        <aside style={{ width: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="bakery-card" style={{ padding: '1.25rem', background: 'var(--bg-sidebar)', color: 'white' }}>
-             <h4 style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '1rem' }}>SESIÓN DE HOY</h4>
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                   <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)' }}>OPERA.</div>
-                   <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>{ventasHoy.length}</div>
-                </div>
-                <div>
-                   <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)' }}>TOTAL</div>
-                   <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>${ventasHoy.reduce((acc, v) => acc + (v.total || 0), 0).toLocaleString()}</div>
-                </div>
-             </div>
-          </div>
-
-          <div className="bakery-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Cart & History Panel */}
+        <aside style={{ width: '420px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Cart Section */}
+          <div className="bakery-card" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-app)' }}>
               <ShoppingCart size={18} color="var(--primary)" />
               <h3 style={{ fontSize: '0.95rem', margin: 0, fontWeight: 900 }}>Carrito de Compras</h3>
             </div>
@@ -249,18 +266,100 @@ const PuntoDeVenta = ({ showToast }) => {
               )}
             </div>
 
-            <div style={{ padding: '1.2rem', background: 'var(--bg-app)', borderTop: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                <span style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem' }}>TOTAL</span>
-                <span style={{ fontWeight: 900, fontSize: '1.5rem' }}>${total.toLocaleString()}</span>
+            <div style={{ padding: '1.2rem', background: 'white', borderTop: '1px solid var(--border-light)' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px' }}>MÉTODO DE PAGO</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
+                 {[
+                   { id: 'Efectivo', icon: Banknote },
+                   { id: 'Transferencia', icon: CreditCard },
+                   { id: 'QR', icon: QrCode }
+                 ].map(m => (
+                   <button 
+                    key={m.id}
+                    onClick={() => setPaymentMethod(m.id)}
+                    style={{ 
+                      padding: '8px', borderRadius: '10px', border: '1.5px solid ' + (paymentMethod === m.id ? 'var(--primary)' : 'var(--border-light)'),
+                      background: paymentMethod === m.id ? 'var(--primary-light)' : 'white',
+                      color: paymentMethod === m.id ? 'var(--primary-dark)' : 'var(--text-muted)',
+                      fontSize: '0.65rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer'
+                    }}
+                   >
+                     <m.icon size={16} /> {m.id}
+                   </button>
+                 ))}
               </div>
-              <button disabled={cart.length === 0} onClick={handleCheckout} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                <CheckCircle size={18} /> COBRAR AHORA
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', alignItems: 'center' }}>
+                <span style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem' }}>TOTAL A COBRAR</span>
+                <span style={{ fontWeight: 900, fontSize: '1.5rem', color: 'var(--primary-dark)' }}>${total.toLocaleString()}</span>
+              </div>
+              <button disabled={cart.length === 0} onClick={handleCheckout} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', height: '50px', fontSize: '1rem' }}>
+                <CheckCircle size={20} /> {paymentMethod === 'QR' ? 'GENERAR QR' : 'FINALIZAR VENTA'}
               </button>
             </div>
           </div>
+
+          {/* Recent Sales History */}
+          <div className="bakery-card" style={{ flex: 1, padding: '1.2rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900 }}>Ventas de la Sesión</h4>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '10px' }}>
+                    {ventasHoy.length} Tick.
+                </div>
+             </div>
+             
+             <div style={{ flex: 1, overflowY: 'auto' }}>
+                {ventasHoy.length === 0 ? (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', paddingTop: '1rem' }}>No hay ventas registradas</div>
+                ) : ventasHoy.map(v => (
+                    <div key={v.id} style={{ padding: '10px', borderBottom: '1px solid var(--bg-app)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>Venta #{v.id.toString().slice(-4)}</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{v.metodoPago} • {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ fontWeight: 900, fontSize: '0.85rem' }}>${v.total?.toLocaleString()}</div>
+                            <button 
+                                onClick={() => handleAnular(v)}
+                                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}
+                                title="Anular Venta"
+                            >
+                                <RefreshCcw size={14} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+             </div>
+          </div>
         </aside>
       </div>
+
+      {/* QR Code Modal Simulation */}
+      <AnimatePresence>
+        {showQR && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bakery-card" style={{ width: '380px', padding: '2.5rem', textAlign: 'center', background: 'white' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                        <h3 style={{ margin: 0 }}>Pago Interoperable</h3>
+                        <button onClick={() => setShowQR(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+                    </div>
+                    
+                    <div style={{ background: 'var(--bg-app)', padding: '2rem', borderRadius: '20px', marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+                        <QrCode size={200} strokeWidth={1.5} color="var(--primary-dark)" />
+                    </div>
+                    
+                    <div style={{ marginBottom: '2rem' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>TOTAL A PAGAR</div>
+                        <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary-dark)' }}>${total.toLocaleString()}</div>
+                    </div>
+                    
+                    <button className="btn btn-primary" onClick={handleCheckout} style={{ width: '100%', justifyContent: 'center', height: '50px' }}>
+                        <Smartphone size={20} /> CONFIRMAR RECEPCIÓN PAGO
+                    </button>
+                 </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showSuccess && (
@@ -268,10 +367,10 @@ const PuntoDeVenta = ({ showToast }) => {
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bakery-card" style={{ width: '350px', padding: '2rem', textAlign: 'center' }}>
               <CheckCircle size={48} color="var(--success)" style={{ marginBottom: '1rem' }} />
               <h3>Venta Exitosa</h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Stock actualizado.</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Transacción guardada correctamente.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <button className="btn btn-primary" onClick={imprimirTicket}><Printer size={16} /> TICKET</button>
-                <button className="btn btn-secondary" onClick={() => setShowSuccess(false)}>CERRAR</button>
+                <button className="btn btn-primary" onClick={() => { setShowSuccess(false); imprimirTicket(); }}><Printer size={16} /> IMPRIMIR TICKET</button>
+                <button className="btn btn-secondary" onClick={() => setShowSuccess(false)}>NUEVA VENTA</button>
               </div>
             </motion.div>
           </div>

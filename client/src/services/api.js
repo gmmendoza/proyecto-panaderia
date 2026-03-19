@@ -185,6 +185,15 @@ export const api = {
                 body: JSON.stringify(data)
             });
             return res.json();
+        },
+        delete: async (id) => {
+            if (isMock) {
+                const list = getStorage('bakery_ventas', initialVentas);
+                localStorage.setItem('bakery_ventas', JSON.stringify(list.filter(v => v.id !== id)));
+                return true;
+            }
+            await fetch(`/api/ventas/${id}`, { method: 'DELETE' });
+            return true;
         }
     },
     pedidos: {
