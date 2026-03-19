@@ -116,7 +116,14 @@ const Inicio = ({ setActiveTab, userRole }) => {
         <div>
           {/* Main Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bakery-card glass" style={{ padding: '2rem', background: 'white' }}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              whileHover={{ scale: 1.02, cursor: 'pointer' }}
+              onClick={() => setActiveTab('estadisticas')}
+              className="bakery-card glass" 
+              style={{ padding: '2rem', background: 'white' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <TrendingUp size={24} />
@@ -127,7 +134,15 @@ const Inicio = ({ setActiveTab, userRole }) => {
               <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '2.4rem', fontWeight: 900 }}>${stats.ventasHoy.toLocaleString()}</h3>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bakery-card glass" style={{ padding: '2rem', background: 'white' }}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.1 }} 
+              whileHover={{ scale: 1.02, cursor: 'pointer' }}
+              onClick={() => setActiveTab('pedidos')}
+              className="bakery-card glass" 
+              style={{ padding: '2rem', background: 'white' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#fffbeb', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Package size={24} />
@@ -138,7 +153,15 @@ const Inicio = ({ setActiveTab, userRole }) => {
               <h3 className="serif" style={{ margin: '0.5rem 0 0 0', fontSize: '2.4rem', fontWeight: 900 }}>En Proceso</h3>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bakery-card glass" style={{ padding: '2rem', background: 'white' }}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.2 }} 
+              whileHover={{ scale: 1.02, cursor: 'pointer' }}
+              onClick={() => setActiveTab('inventario')}
+              className="bakery-card glass" 
+              style={{ padding: '2rem', background: 'white' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Zap size={24} />
@@ -223,43 +246,81 @@ const Inicio = ({ setActiveTab, userRole }) => {
         </aside>
       </div>
 
-      {/* Hero Section */}
-      <section 
-        className="hero-section glass" 
-        style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("hero.png")', height: '400px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', alignItems: 'center', padding: '4rem' }}
-      >
-        <div style={{ maxWidth: '600px', color: 'white', position: 'relative', zIndex: 2 }}>
-          <h2 className="serif" style={{ fontSize: '3rem', color: 'white', marginBottom: '1.5rem', lineHeight: 1.1 }}>Impulsa tu Panadería con Tecnología</h2>
-          <p style={{ fontSize: '1.1rem', marginBottom: '2rem', opacity: 0.9 }}>Gestiona tus recetas, controla el inventario y realiza ventas rápidas con un solo sistema diseñado para artesanos.</p>
-          <button className="btn btn-primary" onClick={() => setActiveTab('produccion')}>Explorar Recetario</button>
-        </div>
-      </section>
-
-      {/* Gallery Highlight */}
-      <div style={{ marginTop: '4rem', marginBottom: '4rem' }}>
-        <h2 className="serif" style={{ fontSize: '2.5rem', marginBottom: '2.5rem', textAlign: 'center' }}>Nuestras Especialidades</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          {categories.map((cat, i) => (
-            <motion.div 
-              key={i} 
-              className="bakery-card glass"
-              whileHover={{ y: -10 }}
-              style={{ padding: '1.5rem' }}
-            >
-              <div style={{ height: '220px', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.5rem', border: '1px solid var(--border-light)' }}>
-                <img src={cat.img} alt={cat.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-              <h3 className="serif" style={{ fontSize: '1.5rem', marginBottom: '0.75rem' }}>{cat.title}</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6 }}>{cat.desc}</p>
-              <motion.button 
-                whileHover={{ x: 5 }}
-                onClick={() => setActiveTab('produccion')}
-                style={{ background: 'none', border: 'none', padding: 0, marginTop: '1.5rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2.5rem', marginBottom: '3rem' }}>
+        {/* Quick Actions Grid */}
+        <section>
+          <h3 className="serif" style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Operaciones Rápidas</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+            {[
+              { label: 'Nueva Venta', icon: ShoppingBag, tab: 'pos', color: 'var(--primary)' },
+              { label: 'Registrar Pedido', icon: CalendarDays, tab: 'pedidos', color: '#6366f1' },
+              { label: 'Control Stock', icon: Package, tab: 'inventario', color: '#10b981' },
+              { label: 'Ver Reportes', icon: TrendingUp, tab: 'estadisticas', color: '#ec4899' },
+            ].map((action, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ y: -5, boxShadow: 'var(--shadow-md)' }}
+                onClick={() => setActiveTab(action.tab)}
+                className="bakery-card glass"
+                style={{ cursor: 'pointer', padding: '1.5rem', textAlign: 'center', background: 'white', border: '1px solid var(--border-light)' }}
               >
-                VER DETALLES <ChevronRight size={16} />
-              </motion.button>
-            </motion.div>
-          ))}
+                <div style={{ width: '50px', height: '50px', margin: '0 auto 1rem', borderRadius: '12px', background: `${action.color}15`, color: action.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <action.icon size={26} />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>{action.label}</span>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Critical Alerts / Tasks */}
+        <section>
+          <h3 className="serif" style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Alertas del Sistema</h3>
+          <div className="bakery-card glass" style={{ background: 'white', padding: '1.5rem' }}>
+            {stats.inventarioCritico > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#FFF5F5', borderRadius: '12px', border: '1px solid #FEE2E2', marginBottom: '1rem' }}>
+                <Zap size={20} color="#E25E3E" />
+                <div>
+                  <div style={{ fontWeight: 800, color: '#E25E3E', fontSize: '0.9rem' }}>Atención: Stock Crítico</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{stats.inventarioCritico} productos requieren reposición inmediata.</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#F0FAF7', borderRadius: '12px', border: '1px solid #E6F4EA', marginBottom: '1rem' }}>
+                <CheckCircle2 size={20} color="#10b981" />
+                <div>
+                  <div style={{ fontWeight: 800, color: '#10b981', fontSize: '0.9rem' }}>Inventario Saludable</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Todos los niveles de stock están por encima del mínimo.</div>
+                </div>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'var(--bg-app)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+              <Clock size={20} color="var(--primary)" />
+              <div>
+                <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.9rem' }}>Próximas Entregas</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{stats.pedidosPendientes} pedidos para hoy.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Overview Section */}
+      <div className="bakery-card" style={{ background: 'var(--text-main)', padding: '3rem', borderRadius: '30px', color: 'white' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+          <div>
+            <h4 style={{ color: 'var(--primary)', fontWeight: 900, marginBottom: '0.5rem' }}>RENDIMIENTO</h4>
+            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Sincronización total con terminales de venta y stock.</p>
+          </div>
+          <div>
+            <h4 style={{ color: 'var(--primary)', fontWeight: 900, marginBottom: '0.5rem' }}>SEGURIDAD</h4>
+            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Respaldo automático de transacciones y clientes.</p>
+          </div>
+          <div>
+            <h4 style={{ color: 'var(--primary)', fontWeight: 900, marginBottom: '0.5rem' }}>CONTROL</h4>
+            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Métricas en tiempo real para decisiones estratégicas.</p>
+          </div>
         </div>
       </div>
     </div>

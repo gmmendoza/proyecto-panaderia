@@ -120,7 +120,7 @@ h1, h2, h3, h4, .serif {
 /* Layout & Sidebar */
 .app-container {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 260px 1fr;
   min-height: 100vh;
 }
 
@@ -132,8 +132,9 @@ h1, h2, h3, h4, .serif {
   height: 100vh;
   position: sticky;
   top: 0;
-  z-index: 100;
-  padding: 2.5rem 1.25rem;
+  z-index: 1000;
+  padding: 2rem 1.25rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo-container {
@@ -205,10 +206,11 @@ h1, h2, h3, h4, .serif {
 
 /* Main Content */
 .main-content {
-  padding: 4rem 5rem;
+  padding: 3rem 5rem;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
+  transition: padding 0.4s ease;
 }
 
 /* Bakery Cards */
@@ -263,9 +265,85 @@ h1, h2, h3, h4, .serif {
   .app-container { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed;
-    left: -280px;
+    left: -260px;
+    box-shadow: 20px 0 50px rgba(0,0,0,0.1);
     transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sidebar.open { left: 0; }
   .main-content { padding: 6rem 1.5rem 2rem; }
+  .mobile-toggle { display: flex !important; }
+  
+  .sidebar-overlay.active {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(61, 44, 30, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 900;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .sidebar, .mobile-toggle, .whatsapp-float, .btn, .nav-menu, header, .pos-search-wrapper, aside {
+    display: none !important;
+  }
+  .app-container {
+    display: block !important;
+  }
+  .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body {
+    background: white !important;
+  }
+}
+
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: calc(50% - 10px);
+  left: calc(50% - 10px);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (min-width: 1025px) {
+  .mobile-toggle { display: none; }
+}
+
+.mobile-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 48px;
+  height: 48px;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
 }

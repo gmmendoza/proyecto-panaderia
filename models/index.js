@@ -6,7 +6,7 @@ const Venta = require('./Venta');
 const Pedido = require('./Pedido');
 const Receta = require('./Receta');
 
-// Define Relationships (One-to-Many)
+// Define Relationships
 Cliente.hasMany(Turno, { foreignKey: 'clienteId', as: 'turnos' });
 Turno.belongsTo(Cliente, { foreignKey: 'clienteId', as: 'cliente' });
 
@@ -16,5 +16,6 @@ module.exports = {
     Turno,
     Producto,
     Venta,
-    Pedido
+    Pedido,
+    Receta
 };

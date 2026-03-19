@@ -1,21 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, 
   Plus, 
   Search, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  DollarSign, 
+  Trash2, 
+  ExternalLink, 
+  MapPin, 
+  Phone, 
   User, 
   Calendar,
   ChevronRight,
-  MoreVertical,
   X,
   Printer,
-  Bell
+  Bell,
+  MessageSquare,
+  Clock,
+  DollarSign
 } from 'lucide-react';
+import { api } from '../services/api';
 
 const MOCK_PEDIDOS = [
   { 
@@ -53,12 +56,12 @@ const MOCK_PEDIDOS = [
   }
 ];
 
-import { api } from '../services/api';
 
 const Pedidos = () => {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [updatingId, setUpdatingId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPedido, setNewPedido] = useState({
     cliente: '',
@@ -116,17 +119,69 @@ const Pedidos = () => {
 
   const updateEstado = async (id, nuevoEstado) => {
     try {
+      setUpdatingId(id);
       await api.pedidos.update(id, { estado: nuevoEstado });
       setPedidos(pedidos.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));
     } catch (err) {
       alert('Error al actualizar estado');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
+  const imprimirPedido = (pedido) => {
+    const printWindow = window.open('', '_blank');
+    const content = `
+      <html>
+        <head>
+          <title>Ticket Pedido - ${pedido.id}</title>
+          <style>
+            body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #333; max-width: 300px; margin: 0 auto; }
+            .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+            .content { margin-bottom: 20px; }
+            .item { margin-bottom: 5px; }
+            .footer { border-top: 1px dashed #000; padding-top: 10px; text-align: center; font-size: 0.8rem; }
+            .row { display: flex; justify-content: space-between; }
+            .bold { font-weight: bold; }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="header">
+            <h3>PANADERÍA EL AROMO</h3>
+            <p>Comprobante de Pedido</p>
+            <p>ID: ${pedido.id}</p>
+          </div>
+          <div class="content">
+            <p><span class="bold">Cliente:</span> ${pedido.cliente}</p>
+            <p><span class="bold">Fecha Entrega:</span> ${pedido.fechaEntrega} ${pedido.horaEntrega}hs</p>
+            <div style="margin: 10px 0;">
+              <p class="bold">Detalles:</p>
+              <p>${pedido.items}</p>
+            </div>
+            <div class="row"><span>Total:</span> <span class="bold">$${Number(pedido.total).toLocaleString()}</span></div>
+            <div class="row"><span>Seña:</span> <span class="bold">$${Number(pedido.sena).toLocaleString()}</span></div>
+            <div class="row" style="font-size: 1.2rem; margin-top: 5px;"><span>SALDO:</span> <span class="bold">$${(pedido.total - pedido.sena).toLocaleString()}</span></div>
+          </div>
+          <div class="footer">
+            <p>Gracias por elegirnos.</p>
+            <p>${new Date().toLocaleString()}</p>
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(content);
+    printWindow.document.close();
+  };
+
+  const sendWhatsApp = (pedido) => {
+    const text = `Hola ${pedido.cliente}! Te escribimos de Panadería El Aromo para informarte que tu pedido #${pedido.id} está en estado: ${pedido.estado}. El saldo pendiente es de $${(pedido.total - pedido.sena).toLocaleString()}. ¡Te esperamos!`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   const filteredPedidos = pedidos.filter(p => 
-    p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.items && p.items.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    p.id.toString().includes(searchTerm)
+    (p.cliente || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.items || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.id || "").toString().includes(searchTerm)
   );
 
   const getStatusColor = (status) => {
@@ -240,29 +295,55 @@ const Pedidos = () => {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <select 
-                value={pedido.estado}
-                onChange={(e) => updateEstado(pedido.id, e.target.value)}
-                style={{ 
-                  padding: '8px 16px', 
-                  borderRadius: '12px', 
-                  border: '1px solid var(--border-light)', 
-                  fontWeight: 800, 
-                  fontSize: '0.85rem',
-                  color: getStatusColor(pedido.estado),
-                  background: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Procesando">En Producción</option>
-                <option value="Listo para Retiro">Listo para Retiro</option>
-                <option value="Entregado">Entregado / Finalizado</option>
-                <option value="Cancelado">Cancelado</option>
-              </select>
+              <div style={{ position: 'relative' }}>
+                <select 
+                  disabled={updatingId === pedido.id}
+                  value={pedido.estado}
+                  onChange={(e) => updateEstado(pedido.id, e.target.value)}
+                  style={{ 
+                    padding: '8px 32px 8px 16px', 
+                    borderRadius: '12px', 
+                    border: '1px solid var(--border-light)', 
+                    fontWeight: 800, 
+                    fontSize: '0.85rem',
+                    color: getStatusColor(pedido.estado),
+                    background: 'white',
+                    cursor: updatingId === pedido.id ? 'wait' : 'pointer',
+                    appearance: 'none'
+                  }}
+                >
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Procesando">En Producción</option>
+                  <option value="Listo para Retiro">Listo para Retiro</option>
+                  <option value="Entregado">Entregado / Finalizado</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+                {updatingId === pedido.id && (
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    style={{ position: 'absolute', right: '10px', top: 'calc(50% - 7px)', color: 'var(--primary)' }}
+                  >
+                    <Clock size={14} />
+                  </motion.div>
+                )}
+              </div>
 
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button className="btn btn-secondary" style={{ width: '40px', height: '40px', padding: 0, borderRadius: '10px' }} title="Imprimir Comprobante">
+                <button 
+                  onClick={() => sendWhatsApp(pedido)}
+                  className="btn btn-secondary" 
+                  style={{ width: '40px', height: '40px', padding: 0, borderRadius: '10px', color: '#25D366' }} 
+                  title="Notificar por WhatsApp"
+                >
+                  <MessageSquare size={18} />
+                </button>
+                <button 
+                  onClick={() => imprimirPedido(pedido)}
+                  className="btn btn-secondary" 
+                  style={{ width: '40px', height: '40px', padding: 0, borderRadius: '10px' }} 
+                  title="Imprimir Comprobante"
+                >
                   <Printer size={18} />
                 </button>
                 <button 

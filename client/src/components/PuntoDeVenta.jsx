@@ -5,7 +5,6 @@ import {
   Trash2, 
   Plus, 
   Minus, 
-  CheckCircle,
   X,
   Tags,
   Coffee,
@@ -17,7 +16,10 @@ import {
   CreditCard,
   Banknote,
   Edit2,
-  Check
+  Check,
+  MessageSquare,
+  Printer,
+  CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,6 +36,7 @@ const PuntoDeVenta = () => {
   const [editingItemId, setEditingItemId] = useState(null);
   const [editType, setEditType] = useState(null); // 'price' or 'qty'
   const [editValue, setEditValue] = useState('');
+  const [lastSaleData, setLastSaleData] = useState(null);
 
   useEffect(() => {
     loadProducts();
@@ -118,25 +121,84 @@ const PuntoDeVenta = () => {
   const handleCharge = async () => {
     if (cart.length === 0) return;
     try {
+      const saleItems = cart.map(item => ({ id: item.id, nombre: item.nombre, qty: item.cantidad, precio: item.precio, total: item.precio * item.cantidad }));
+      
       // Registrar venta
-      await api.ventas.create({
+      const resp = await api.ventas.create({
         total,
-        metodoPago,
-        items: cart.map(item => ({ id: item.id, nombre: item.nombre, qty: item.cantidad, total: item.precio * item.cantidad }))
+        metodoPago: paymentMethod,
+        items: saleItems
+      });
+
+      setLastSaleData({
+        id: resp.id || 'T-' + Math.floor(Math.random() * 10000),
+        total,
+        metodoPago: paymentMethod,
+        items: saleItems,
+        fecha: new Date().toLocaleString()
       });
 
       // Descontar stock (en paralelo)
       await Promise.all(cart.map(item => 
-        api.productos.update(item.id, { stock: Math.max(0, item.stock - item.cantidad) })
+        api.productos.update(item.id, { stock: Math.max(0, (item.stock || 0) - item.cantidad) })
       ));
 
       setShowSuccess(true);
       setCart([]);
       loadProducts(); // Recargar productos para reflejar nuevo stock
-      setTimeout(() => setShowSuccess(false), 2500);
     } catch (err) {
       alert('Error al procesar la venta');
     }
+  };
+
+  const imprimirTicket = () => {
+    if (!lastSaleData) return;
+    const printWindow = window.open('', '_blank');
+    const content = `
+      <html>
+        <head>
+          <title>Ticket #2024</title>
+          <style>
+            body { font-family: 'Courier New', Courier, monospace; padding: 10px; color: #000; max-width: 250px; margin: 0 auto; line-height: 1.2; font-size: 12px; }
+            .center { text-align: center; }
+            .border { border-bottom: 1px dashed #000; margin: 8px 0; }
+            .row { display: flex; justify-content: space-between; }
+            .bold { font-weight: bold; }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="center">
+            <h3>EL AROMO</h3>
+            <p>Panadería & Pastelería</p>
+            <p>Ticket: ${lastSaleData.id}</p>
+            <p>${lastSaleData.fecha}</p>
+          </div>
+          <div class="border"></div>
+          ${lastSaleData.items.map(item => `
+            <div class="row">
+              <div style="flex: 1;">${item.nombre}</div>
+              <div style="width: 40px; text-align: right;">v${item.qty}</div>
+              <div style="width: 60px; text-align: right;">$${item.total.toLocaleString()}</div>
+            </div>
+          `).join('')}
+          <div class="border"></div>
+          <div class="row bold" style="font-size: 14px;">
+            <span>TOTAL</span>
+            <span>$${lastSaleData.total.toLocaleString()}</span>
+          </div>
+          <p class="center" style="margin-top: 10px;">Metodo: ${lastSaleData.metodoPago}</p>
+          <div class="center" style="margin-top: 15px;">¡Gracias por su visita!</div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(content);
+    printWindow.document.close();
+  };
+
+  const shareWhatsApp = () => {
+    if (!lastSaleData) return;
+    const text = `Gracias por tu compra en El Aromo!\nTicket #${lastSaleData.id}\nImporte: $${lastSaleData.total.toLocaleString()}\nMetodo: ${lastSaleData.metodoPago}\n¡Que lo disfrutes!`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -363,10 +425,48 @@ const PuntoDeVenta = () => {
             exit={{ opacity: 0, scale: 0.8 }}
             className="success-overlay"
           >
-            <div className="glass-dark" style={{ padding: '3rem', borderRadius: '40px', textAlign: 'center', boxShadow: '0 30px 60px rgba(0,0,0,0.3)' }}>
-              <CheckCircle size={80} color="var(--primary)" style={{ marginBottom: '1.5rem' }} />
-              <h2 className="serif" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>¡Venta Exitosa!</h2>
-              <p style={{ opacity: 0.8 }}>El ticket ha sido procesado correctamente.</p>
+            <div className="glass-dark" style={{ padding: '3.5rem', borderRadius: '40px', textAlign: 'center', boxShadow: '0 30px 60px rgba(0,0,0,0.3)', minWidth: '400px' }}>
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '2rem' }}>
+                <CheckCircle size={90} color="var(--primary)" />
+                <motion.div 
+                  initial={{ scale: 0 }} 
+                  animate={{ scale: 1 }} 
+                  transition={{ delay: 0.3 }}
+                  style={{ position: 'absolute', bottom: 0, right: 0, background: '#10b981', borderRadius: '50%', padding: '6px' }}
+                >
+                  <Check color="white" size={24} />
+                </motion.div>
+              </div>
+              <h2 className="serif" style={{ fontSize: '3rem', marginBottom: '0.5rem', color: 'white' }}>¡Venta Exitosa!</h2>
+              <p style={{ opacity: 0.8, color: 'white', marginBottom: '3rem', fontSize: '1.1rem' }}>Imprime el ticket o envíalo por WhatsApp.</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={imprimirTicket}
+                    className="btn btn-primary"
+                    style={{ height: '60px', fontSize: '1rem', gap: '10px' }}
+                  >
+                    <Printer size={20} /> IMPRIMIR TICKET
+                  </motion.button>
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={shareWhatsApp}
+                    style={{ background: '#25D366', color: 'white', border: 'none', borderRadius: '14px', height: '60px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                  >
+                    <MessageSquare size={20} /> WHATSAPP
+                  </motion.button>
+                </div>
+                <button 
+                  onClick={() => setShowSuccess(false)}
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '14px', height: '54px', fontWeight: 700, cursor: 'pointer', marginTop: '1rem' }}
+                >
+                  CERRAR Y CONTINUAR
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -398,8 +498,10 @@ const PuntoDeVenta = () => {
         .payment-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .payment-selector button { border: 1px solid var(--border-light); background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; cursor: pointer; }
         .payment-selector button.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .grand-total { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--primary); font-weight: 900; }
-        .checkout-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; border: none; cursor: pointer; color: white; font-weight: 800; }
+        .tot-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .tot-row.main { margin-bottom: 1.5rem; }
+        .grand-total { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--primary); font-weight: 900; }
+        .checkout-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; border: none; cursor: pointer; color: white; font-weight: 800; padding: 1rem; }
         .checkout-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .inline-edit-input { width: 80px; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; }
         .inline-edit-input-qty { width: 60px; border: 1px solid var(--primary); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; text-align: center; }

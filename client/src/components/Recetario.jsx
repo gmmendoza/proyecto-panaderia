@@ -25,17 +25,51 @@ const MOCK_RECIPES = []; // Fallback empty
 const ProductionCalculator = ({ recipe, onClose }) => {
   const [targetKg, setTargetKg] = useState(1);
   const [checkedItems, setCheckedItems] = useState({});
+  const [products, setProducts] = useState([]);
+  const [isFinishing, setIsFinishing] = useState(false);
 
-  const scaleFactor = targetKg;
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await api.productos.getAll();
+        setProducts(data);
+      } catch (err) {
+        console.error('Error fetching products for calculation:', err);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const toggleCheck = (index) => {
     setCheckedItems(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
   const handleFinishProduction = async () => {
-    // Proximamente: Descontar insumos del inventario
-    alert(`Producción de ${targetKg}kg de ${recipe.nombre} finalizada con éxito.`);
-    onClose();
+    try {
+      setIsFinishing(true);
+      // Descontar insumos del inventario
+      const updatePromises = recipe.ingredientes.map(ing => {
+        const product = products.find(p => p.nombre.toLowerCase() === ing.nombre.toLowerCase());
+        if (product) {
+          const usedAmount = ing.base * scaleFactor;
+          // Si la unidad es gramo y el stock es kg, convertir
+          let amountToDeduct = usedAmount;
+          if (ing.unidad === 'g' && product.unidad === 'kg') {
+            amountToDeduct = usedAmount / 1000;
+          }
+          return api.productos.update(product.id, { stock: Math.max(0, (product.stock || 0) - amountToDeduct) });
+        }
+        return Promise.resolve();
+      });
+
+      await Promise.all(updatePromises);
+      alert(`Producción de ${targetKg}kg de ${recipe.nombre} finalizada. El stock de insumos ha sido actualizado.`);
+      onClose();
+    } catch (err) {
+      alert('Error al actualizar el stock tras la producción');
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -169,11 +203,12 @@ const ProductionCalculator = ({ recipe, onClose }) => {
         <motion.button 
           whileHover={{ scale: 1.02, y: -5 }}
           whileTap={{ scale: 0.98 }}
+          disabled={isFinishing}
           onClick={handleFinishProduction}
-          className="btn btn-primary" 
+          className={`btn btn-primary ${isFinishing ? 'btn-loading' : ''}`} 
           style={{ width: '100%', height: '70px', fontSize: '1.1rem', fontWeight: 900, borderRadius: '20px', boxShadow: '0 15px 35px rgba(253, 184, 19, 0.4)' }}
         >
-          <Zap size={20} /> FINALIZAR Y ACTUALIZAR STOCK
+          {!isFinishing && <Zap size={20} />} {!isFinishing ? 'FINALIZAR Y ACTUALIZAR STOCK' : 'PROCESANDO...'}
         </motion.button>
         <p style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Esto descontará automáticamente del stock de insumos.</p>
       </div>

@@ -31,7 +31,7 @@ const initialVentas = [
 ];
 
 const initialPedidos = [
-    { id: 1, clienteNombre: 'Marta R.', descripcion: 'Torta de Cumpleaños', fechaEntrega: new Date(Date.now() + 172800000).toISOString(), total: 15000, sena: 5000, saldo: 10000, estado: 'Recibido' }
+    { id: 1, cliente: 'Marta R.', items: 'Torta de Cumpleaños', fechaEntrega: new Date(Date.now() + 172800000).toISOString().split('T')[0], horaEntrega: '17:00', total: 15000, sena: 5000, estado: 'Pendiente', prioridad: 'Media' }
 ];
 
 const getStorage = (key, initial) => {
@@ -176,7 +176,7 @@ export const api = {
         create: async (data) => {
             if (isMock) {
                 const list = getStorage('bakery_pedidos', initialPedidos);
-                const newItem = { ...data, id: Date.now(), saldo: (data.total || 0) - (data.sena || 0) };
+                const newItem = { ...data, id: Date.now() };
                 localStorage.setItem('bakery_pedidos', JSON.stringify([newItem, ...list]));
                 return newItem;
             }
@@ -190,7 +190,7 @@ export const api = {
         update: async (id, data) => {
             if (isMock) {
                 const list = getStorage('bakery_pedidos', initialPedidos);
-                const newList = list.map(p => p.id === id ? { ...p, ...data, saldo: (data.total || p.total) - (data.sena || p.sena) } : p);
+                const newList = list.map(p => p.id === id ? { ...p, ...data } : p);
                 localStorage.setItem('bakery_pedidos', JSON.stringify(newList));
                 return data;
             }

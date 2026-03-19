@@ -14,7 +14,9 @@ import {
   Check,
   X,
   Layers,
-  ShoppingBag
+  ShoppingBag,
+  Printer,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -116,6 +118,55 @@ const Inventario = () => {
     }
   };
 
+  const printShoppingList = () => {
+    const lowStockItems = items.filter(item => item.stock < ((item.stockMax || 100) * 0.25));
+    if (lowStockItems.length === 0) {
+      alert('No hay artículos con stock bajo para reponer.');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const content = `
+      <html>
+        <head>
+          <title>Lista de Compras - El Aromo</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+            h1 { color: #D48806; border-bottom: 2px solid #D48806; padding-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; background: #f9f9f9; padding: 12px; border-bottom: 2px solid #eee; }
+            td { padding: 12px; border-bottom: 1px solid #eee; }
+            .urgent { color: #E25E3E; font-weight: bold; }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <h1>Lista de Reposición Urgente</h1>
+          <p>Generada el: ${new Date().toLocaleString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Stock Actual</th>
+                <th>Sugerencia Compra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lowStockItems.map(item => `
+                <tr>
+                  <td>${item.nombre}</td>
+                  <td class="urgent">${item.stock} ${item.unidad}</td>
+                  <td>${(item.stockMax || 100) - item.stock} ${item.unidad}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(content);
+    printWindow.document.close();
+  };
+
   const filteredItems = items.filter(item => {
     const matchesSearch = item.nombre.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filter === 'Todos' || item.categoria === filter;
@@ -143,7 +194,7 @@ const Inventario = () => {
       </header>
 
       {/* Hero Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem', marginBottom: '3.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem', marginBottom: '2rem' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bakery-card glass" style={{ padding: '2.5rem', background: 'white' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -169,8 +220,8 @@ const Inventario = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bakery-card glass" style={{ padding: '2.5rem', background: 'white' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Valor en Almacén</p>
-              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800, color: '#10b981' }}>$1.240.000</div>
+              <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Valor Estimado</p>
+              <div className="serif" style={{ fontSize: '3rem', fontWeight: 800, color: '#10b981' }}>${items.reduce((acc, x) => acc + (x.precio * x.stock), 0).toLocaleString()}</div>
             </div>
             <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: '#F0FAF7', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ShoppingBag size={32} />
@@ -178,6 +229,31 @@ const Inventario = () => {
           </div>
         </motion.div>
       </div>
+
+      {lowStockCount > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ background: 'var(--text-main)', color: 'white', padding: '1.5rem 2.5rem', borderRadius: '24px', marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '12px', borderRadius: '15px' }}>
+              <Truck size={24} color="var(--primary)" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>Sugerencia de Reposición</div>
+              <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Tienes {lowStockCount} artículos por debajo del stock mínimo de seguridad.</div>
+            </div>
+          </div>
+          <button 
+            onClick={printShoppingList}
+            className="btn btn-primary" 
+            style={{ height: '50px', display: 'flex', alignItems: 'center', gap: '10px', padding: '0 24px' }}
+          >
+            <Printer size={18} /> IMPRIMIR LISTA DE COMPRAS
+          </button>
+        </motion.div>
+      )}
 
       <div className="bakery-card glass" style={{ padding: '0', overflow: 'hidden', background: 'white', position: 'relative' }}>
         {/* Toast Notification */}

@@ -6,7 +6,7 @@ const { Pedido } = require('../models');
 router.get('/', async (req, res) => {
     try {
         const pedidos = await Pedido.findAll({
-            order: [['fechaEntrega', 'ASC']]
+            order: [['createdAt', 'DESC']]
         });
         res.json(pedidos);
     } catch (error) {
@@ -17,32 +17,24 @@ router.get('/', async (req, res) => {
 // Crear un nuevo pedido
 router.post('/', async (req, res) => {
     try {
-        const { total, senia } = req.body;
-        const saldo = total - senia;
-        const pedido = await Pedido.create({ ...req.body, saldo });
+        const pedido = await Pedido.create(req.body);
         res.status(201).json(pedido);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
 
-// Actualizar un pedido (ej. cambiar estado o saldo)
+// Actualizar un pedido
 router.put('/:id', async (req, res) => {
     try {
-        const { total, senia } = req.body;
-        let updateData = { ...req.body };
-        if (total !== undefined && senia !== undefined) {
-            updateData.saldo = total - senia;
-        }
-        
-        const [updated] = await Pedido.update(updateData, {
+        const [updated] = await Pedido.update(req.body, {
             where: { id: req.params.id }
         });
         if (updated) {
             const updatedPedido = await Pedido.findByPk(req.params.id);
             return res.json(updatedPedido);
         }
-        throw new Error('Pedido no encontrado');
+        res.status(404).json({ message: 'Pedido no encontrado' });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -57,7 +49,7 @@ router.delete('/:id', async (req, res) => {
         if (deleted) {
             return res.json({ message: "Pedido eliminado" });
         }
-        throw new Error('Pedido no encontrado');
+        res.status(404).json({ message: 'Pedido no encontrado' });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
